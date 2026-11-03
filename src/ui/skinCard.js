@@ -65,7 +65,7 @@ import { spriteFor, eotbSpriteUrl } from '../player/eyeOfTheBeholder/eotbSprite.
 import { EOTB_FOOT_SET_COUNT } from '../player/classSkins.js';
 import { layeredPreviewUrl, layeredGenderOf, LAYERED_OWN } from '../player/eyeOfTheBeholder/layeredArmor.js'; // LAYERED-GEAR
 import { t } from '../systems/textManager.js';
-import { isEnabled as paperdollOn, setEnabled as setPaperdoll, backSpriteOn, setBackSprite, haloOn, setHalo } from '../../custom/paperdoll/paperdollSetting.js'; // custom/paperdoll: the Paperdoll look
+import { isEnabled as paperdollOn, setEnabled as setPaperdoll, backSpriteOn, setBackSprite, haloOn, setHalo, titleOn, setTitle, ownNameOn, setOwnName, chosenTitleOn, setChosenTitle } from '../../custom/paperdoll/paperdollSetting.js'; // custom/paperdoll: the Paperdoll look
 
 const VENDOR = 'eye-of-the-beholder';
 const FOOT = 'Graphics.OnFoot';
@@ -347,6 +347,29 @@ export function skinCard(doc, { sets: offer = skinSets, gender = () => null } = 
     haloBox.onchange = () => setHalo(haloBox.checked);
     halo.append(haloBox, t('skin.halo', 'Golden halo over my head (only you see it)'));
     root.append(halo);
+    // custom/paperdoll: the gold title "My Dress Up Darling" - over your head in third person, and on your profile's plate
+    const ddTitle = el('label', 'meta');
+    const ddBox = el('input');
+    ddBox.type = 'checkbox';
+    ddBox.checked = titleOn();
+    ddBox.style.marginRight = '8px';
+    ddBox.onchange = () => setTitle(ddBox.checked);
+    ddTitle.append(ddBox, t('skin.dressup', 'Show my title, My Dress Up Darling (only you see it)'));
+    root.append(ddTitle);
+    // custom/paperdoll: your own plate over your head - your name, and the title you chose in the "Over the head" slot
+    for (const [on, set, words] of [
+      [ownNameOn, setOwnName, ['skin.ownName', 'Show my name above my head (only you see it)']],
+      [chosenTitleOn, setChosenTitle, ['skin.ownTitle', 'Show my chosen title above my head (only you see it)']],
+    ]) {
+      const row = el('label', 'meta');
+      const box = el('input');
+      box.type = 'checkbox';
+      box.checked = on();
+      box.style.marginRight = '8px';
+      box.onchange = () => set(box.checked);
+      row.append(box, t(words[0], words[1]));
+      root.append(row);
+    }
   }
 
   paint();

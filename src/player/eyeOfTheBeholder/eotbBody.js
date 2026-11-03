@@ -77,6 +77,8 @@ import { createQuiverArt, loadQuiverArrow, quiverRidesWith, BACK_QUIVER } from '
 import { createBackShieldArt, backShieldSeen, BACK_SHIELD } from './eotbBackShield.js';   // BACK-SHIELD: a sheathed layered body's shield on its back
 import { ammoCountFor } from '../../systems/inventory.js';   // QUIVER: arrows in it, with no rig to say
 import { goldHaloDraw } from '../../../custom/paperdoll/goldHalo.js'; // custom/paperdoll: the golden halo over the player's head
+import { dressUpTitleDraw } from '../../../custom/paperdoll/dressUpTitle.js'; // custom/paperdoll: the gold title over the halo
+import { ownPlateDraw } from '../../../custom/paperdoll/ownPlate.js'; // custom/paperdoll: your own name and chosen title, over all
 import { paperdollDraw } from '../../../custom/paperdoll/paperdollExtensions.js';   // custom/paperdoll: the player's own paperdoll stands in for the sprite in third person
 
 /** PlayerHeightChanger's controllerStandingHeight, the capsule the
@@ -1123,7 +1125,7 @@ export function createEotbBody({ count = spriteCount, urlFor = eotbSpriteUrl, de
       return { table: stateCurrent, frame: frameCurrent, clip: isAnimating ? { table: isAnimating.table, i: isAnimating.i, phase: isAnimating.phase } : null };
     },
 
-    draw(canvas, { eye, feet, yaw, face: faceNow = null } = {}) {
+    draw(canvas, { eye, feet, yaw, proj, view, face: faceNow = null } = {}) {   // custom/paperdoll: proj and view, for the plate over the head
       face = faceNow && Number.isFinite(faceNow.yaw) ? faceNow : null;
       figure = null; facingDrawn = null; holsterDrawn = false; glowList.length = 0; backList.length = 0;
       if (!renderer || !activeFlag || !shown) return false;
@@ -1181,8 +1183,12 @@ export function createEotbBody({ count = spriteCount, urlFor = eotbSpriteUrl, de
       // maps alone (renderer.recordShadowBillboards - the same record the drawn body makes; no maps, no shadow, as a
       // ShadowsOnly renderer under no light), and None to nothing. Third person is untouched.
       const bbUp = face?.up ?? [0, 1, 0];
-      // custom/paperdoll: the golden halo, a local extra over the head (custom/paperdoll/goldHalo.js)
-      if (!FP && grow === 1 && !last.riding && !last.transformed && !died && !last.died) goldHaloDraw({ renderer, feet: cam.feet, camRight, bbUp });
+      // custom/paperdoll: the golden halo and the gold title, local extras over the head (custom/paperdoll/goldHalo.js, dressUpTitle.js)
+      if (!FP && grow === 1 && !last.riding && !last.transformed && !died && !last.died) {
+        goldHaloDraw({ renderer, feet: cam.feet, camRight, bbUp });
+        dressUpTitleDraw({ renderer, feet: cam.feet, camRight, bbUp });
+        ownPlateDraw({ canvas, proj, view, feet: cam.feet });
+      }
       // custom/paperdoll: in third person the player's own paperdoll stands in for the sprite
       // (custom/paperdoll/paperdollExtensions.js). The sprite stays when riding, transformed, dead or grown, and until the
       // doll is ready. Its lantern, holster, quiver and back shield go with it: they hang off the sprite's marks.

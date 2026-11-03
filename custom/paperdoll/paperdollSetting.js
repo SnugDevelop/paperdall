@@ -69,3 +69,61 @@ export function setHalo(on) {
   try { appStorage()?.setItem(HALO_KEY, haloCache ? '1' : '0'); } catch { /* no storage */ }
   return haloCache;
 }
+
+// ---- the title "My Dress Up Darling" (custom/paperdoll/dressUpTitle.js, customTitle.js): over your head and on your profile ----
+const TITLE_KEY = 'custom.paperdoll.dressUpTitle';
+const TITLE_DEFAULT_ON = true;
+
+let titleCache = null;
+
+export function titleOn() {
+  if (titleCache === null) {
+    let v = null;
+    try { v = appStorage()?.getItem(TITLE_KEY); } catch { /* no storage */ }
+    titleCache = v == null ? TITLE_DEFAULT_ON : v !== '0';
+  }
+  return titleCache;
+}
+
+export function setTitle(on) {
+  titleCache = !!on;
+  try { appStorage()?.setItem(TITLE_KEY, titleCache ? '1' : '0'); } catch { /* no storage */ }
+  return titleCache;
+}
+
+// ---- your own plate over your head (custom/paperdoll/ownPlate.js): your name, and your chosen title - both off until asked ----
+const OWN_NAME_KEY = 'custom.paperdoll.ownName';
+const CHOSEN_TITLE_KEY = 'custom.paperdoll.chosenTitle';
+
+let ownNameCache = null;
+let chosenTitleCache = null;
+
+export function ownNameOn() {
+  if (ownNameCache === null) {
+    let v = null;
+    try { v = appStorage()?.getItem(OWN_NAME_KEY); } catch { /* no storage */ }
+    ownNameCache = v === '1';
+  }
+  return ownNameCache;
+}
+
+export function setOwnName(on) {
+  ownNameCache = !!on;
+  try { appStorage()?.setItem(OWN_NAME_KEY, ownNameCache ? '1' : '0'); } catch { /* no storage */ }
+  return ownNameCache;
+}
+
+export function chosenTitleOn() {
+  if (chosenTitleCache === null) {
+    let v = null;
+    try { v = appStorage()?.getItem(CHOSEN_TITLE_KEY); } catch { /* no storage */ }
+    chosenTitleCache = v === '1';
+  }
+  return chosenTitleCache;
+}
+
+export function setChosenTitle(on) {
+  chosenTitleCache = !!on;
+  try { appStorage()?.setItem(CHOSEN_TITLE_KEY, chosenTitleCache ? '1' : '0'); } catch { /* no storage */ }
+  return chosenTitleCache;
+}

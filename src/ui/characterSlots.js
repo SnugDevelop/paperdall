@@ -21,6 +21,8 @@ import {
 } from '../net/armoryLaw.js';
 import { armoryPieceName, armorySlotName, armoryLineName, ARMORY_LOOK } from './armoryText.js';
 import { namePlateNode } from './namePlate.js';
+import { dressUpTitleNode } from '../../custom/paperdoll/customTitle.js'; // custom/paperdoll: the client's own gold title
+import { titleOn } from '../../custom/paperdoll/paperdollSetting.js';
 import { EFFECT_SLOTS, EFFECTS, effectWorn } from '../net/effectLaw.js'; // STOREFRONT: the effects' slots
 import { effectName, effectLook, effectSlotName } from './effectText.js';
 import { effectEmblemNode } from './effectEmblems.js'; // AUDIT-STOREFRONT: each choice's emblem beside its name
@@ -228,13 +230,16 @@ export function characterSlots(
     if (!plateHost || !stage) return;
     const s = slotsShown(flow.wardrobe, trial),
       me = who() ?? {};
-    const key = `${s.title}|${s.glyphs.join(',')}|${me.name ?? ''}|${me.lv ?? ''}`;
+    const key = `${s.title}|${s.glyphs.join(',')}|${me.name ?? ''}|${me.lv ?? ''}|${titleOn() ? 'dd' : ''}`;
     if (key !== plateKey) {
       plateKey = key;
       plateHost.textContent = '';
       plateHost.append(
         namePlateNode(doc, { title: s.title, glyphs: s.glyphs, name: me.name ?? '', lv: me.lv ?? null }),
       );
+      // custom/paperdoll: the client's own title, above the name
+      const plate = plateHost.firstChild;
+      if (titleOn() && plate) plate.insertBefore(dressUpTitleNode(doc), plate.firstChild);
     }
     const at = stage.headAt();
     const node = plateHost.firstChild;
