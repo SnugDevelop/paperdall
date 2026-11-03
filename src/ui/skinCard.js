@@ -279,6 +279,8 @@ export function skinCard(doc, { sets: offer = skinSets, gender = () => null } = 
     if (w.layered === 1 || w.layered === 2) lastBody = w.layered;
     const mode = paperdollOn() ? 'doll' : layeredOn ? 'layered' : 'skins';
     lookToggle(mode);
+    // Keep local-only appearance controls together in a clear, readable group.
+    const displayOptions = [];
     if (mode === 'doll') {
       // custom/paperdoll: the paperdoll stands in for the sprite on foot; Mounted stays the rider's skin
       root.append(
@@ -292,17 +294,11 @@ export function skinCard(doc, { sets: offer = skinSets, gender = () => null } = 
         ),
       );
       // custom/paperdoll: the paperdoll as the front only - seen from behind, the animated sprite draws
-      const back = el('label', 'meta');
-      const box = el('input');
-      box.type = 'checkbox';
-      box.checked = backSpriteOn();
-      box.style.marginRight = '8px';
-      box.onchange = () => {
-        setBackSprite(box.checked);
-        paint();
-      };
-      back.append(box, t('skin.paperdoll.back', 'Use the animated sprite when seen from behind'));
-      root.append(back);
+      displayOptions.push([
+        t('skin.paperdoll.back', 'Use the animated sprite when seen from behind'),
+        backSpriteOn,
+        (checked) => { setBackSprite(checked); paint(); },
+      ]);
     } else if (layeredOn) {
       // LAYERED-GEAR: the body, drawn in the armor worn - the On foot panel put away, Mounted as ever
       root.append(
@@ -338,38 +334,40 @@ export function skinCard(doc, { sets: offer = skinSets, gender = () => null } = 
       panel('On foot', FOOT, sets.foot, w.foot, FOOT_GROUPS);
     }
     panel('Mounted', HORSE, sets.horse, w.horse, [{ label: '', from: 0, to: Infinity }]);
-    // custom/paperdoll: the golden halo - a local extra over your own head in third person, never sent to the service
-    const halo = el('label', 'meta');
-    const haloBox = el('input');
-    haloBox.type = 'checkbox';
-    haloBox.checked = haloOn();
-    haloBox.style.marginRight = '8px';
-    haloBox.onchange = () => setHalo(haloBox.checked);
-    halo.append(haloBox, t('skin.halo', 'Golden halo over my head (only you see it)'));
-    root.append(halo);
-    // custom/paperdoll: the gold title "My Dress Up Darling" - over your head in third person, and on your profile's plate
-    const ddTitle = el('label', 'meta');
-    const ddBox = el('input');
-    ddBox.type = 'checkbox';
-    ddBox.checked = titleOn();
-    ddBox.style.marginRight = '8px';
-    ddBox.onchange = () => setTitle(ddBox.checked);
-    ddTitle.append(ddBox, t('skin.dressup', 'Show my title, My Dress Up Darling (only you see it)'));
-    root.append(ddTitle);
-    // custom/paperdoll: your own plate over your head - your name, and the title you chose in the "Over the head" slot
-    for (const [on, set, words] of [
-      [ownNameOn, setOwnName, ['skin.ownName', 'Show my name above my head (only you see it)']],
-      [chosenTitleOn, setChosenTitle, ['skin.ownTitle', 'Show my chosen title above my head (only you see it)']],
-    ]) {
-      const row = el('label', 'meta');
+    // custom/paperdoll: local-only effects and overhead plate options.
+    // Render as one prominent settings group instead of scattered tiny labels.
+    displayOptions.push(
+      [t('skin.halo', 'Golden halo over my head (only you see it)'), haloOn, setHalo],
+      [t('skin.dressup', 'Show my title, My Dress Up Darling (only you see it)'), titleOn, setTitle],
+      [t('skin.ownName', 'Show my name above my head (only you see it)'), ownNameOn, setOwnName],
+      [t('skin.ownTitle', 'Show my chosen title above my head (only you see it)'), chosenTitleOn, setChosenTitle],
+    );
+
+    const display = el('section', 'paperdoll-display-options');
+    display.style.cssText = [
+      'margin-top:14px', 'padding:14px 16px', 'border:1px solid var(--border, #514936)',
+      'border-radius:6px', 'background:rgba(0,0,0,.22)', 'display:flex',
+      'flex-direction:column', 'gap:10px',
+    ].join(';');
+    const displayHeading = el('div', 'skingroup', 'Personal display');
+    displayHeading.style.cssText = 'font-size:14px;letter-spacing:2px;margin:0 0 2px;color:var(--gold, #d5b46a);';
+    display.append(displayHeading);
+    for (const [caption, read, write] of displayOptions) {
+      const row = el('label', 'paperdoll-display-option');
+      row.style.cssText = [
+        'display:flex', 'align-items:center', 'gap:12px', 'min-height:30px',
+        'font-size:15px', 'line-height:1.4', 'font-weight:600', 'color:var(--text, #e7dfce)',
+        'cursor:pointer', 'user-select:none',
+      ].join(';');
       const box = el('input');
       box.type = 'checkbox';
-      box.checked = on();
-      box.style.marginRight = '8px';
-      box.onchange = () => set(box.checked);
-      row.append(box, t(words[0], words[1]));
-      root.append(row);
+      box.checked = read();
+      box.style.cssText = 'width:18px;height:18px;flex:0 0 18px;margin:0;accent-color:#c9a45b;cursor:pointer;';
+      box.onchange = () => write(box.checked);
+      row.append(box, el('span', null, caption));
+      display.append(row);
     }
+    root.append(display);
   }
 
   paint();
