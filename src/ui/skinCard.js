@@ -65,7 +65,7 @@ import { spriteFor, eotbSpriteUrl } from '../player/eyeOfTheBeholder/eotbSprite.
 import { EOTB_FOOT_SET_COUNT } from '../player/classSkins.js';
 import { layeredPreviewUrl, layeredGenderOf, LAYERED_OWN } from '../player/eyeOfTheBeholder/layeredArmor.js'; // LAYERED-GEAR
 import { t } from '../systems/textManager.js';
-import { isEnabled as paperdollOn, setEnabled as setPaperdoll, backSpriteOn, setBackSprite, haloOn, setHalo, titleOn, setTitle, ownNameOn, setOwnName, chosenTitleOn, setChosenTitle } from '../../custom/paperdoll/paperdollSetting.js'; // custom/paperdoll: the Paperdoll look
+import { isEnabled as paperdollOn, setEnabled as setPaperdoll, backSpriteOn, setBackSprite, haloOn, setHalo, fireHaloOn, setFireHalo, snowHaloOn, setSnowHalo, titleOn, setTitle, ownNameOn, setOwnName, chosenTitleOn, setChosenTitle, ownPlateSizeMode, setOwnPlateSizeMode, characterNameOn, setCharacterName, titleScalePercent, setTitleScalePercent } from '../../custom/paperdoll/paperdollSetting.js'; // custom/paperdoll: the Paperdoll look
 
 const VENDOR = 'eye-of-the-beholder';
 const FOOT = 'Graphics.OnFoot';
@@ -337,9 +337,12 @@ export function skinCard(doc, { sets: offer = skinSets, gender = () => null } = 
     // custom/paperdoll: local-only effects and overhead plate options.
     // Render as one prominent settings group instead of scattered tiny labels.
     displayOptions.push(
-      [t('skin.halo', 'Golden halo over my head (only you see it)'), haloOn, setHalo],
+      [t('skin.halo', 'Golden halo with sparkles (only you see it)'), haloOn, setHalo],
+      ['Flaming halo — rising flames (only you see it)', fireHaloOn, setFireHalo],
+      ['Frost halo — falling snowflakes (only you see it)', snowHaloOn, setSnowHalo],
       [t('skin.dressup', 'Show my title, My Dress Up Darling (only you see it)'), titleOn, setTitle],
       [t('skin.ownName', 'Show my name above my head (only you see it)'), ownNameOn, setOwnName],
+      ['Use character name instead of account name', characterNameOn, setCharacterName],
       [t('skin.ownTitle', 'Show my chosen title above my head (only you see it)'), chosenTitleOn, setChosenTitle],
     );
 
@@ -352,6 +355,38 @@ export function skinCard(doc, { sets: offer = skinSets, gender = () => null } = 
     const displayHeading = el('div', 'skingroup', 'Personal display');
     displayHeading.style.cssText = 'font-size:14px;letter-spacing:2px;margin:0 0 2px;color:var(--gold, #d5b46a);';
     display.append(displayHeading);
+    const sizeRow = el('label', 'paperdoll-display-option');
+    sizeRow.style.cssText = 'display:flex;align-items:center;gap:12px;min-height:34px;font-size:15px;line-height:1.4;font-weight:600;color:var(--text, #e7dfce);';
+    const sizeCaption = el('span', null, 'Name and title size');
+    const sizeSelect = el('select');
+    sizeSelect.style.cssText = 'margin-left:auto;min-width:190px;padding:7px 10px;background:#191919;color:var(--text, #e7dfce);border:1px solid var(--border, #716143);border-radius:4px;font:inherit;';
+    for (const [value, label] of [['dynamic', 'Dynamic camera zoom'], ['large', 'Large fixed size']]) {
+      const option = el('option', null, label);
+      option.value = value;
+      sizeSelect.append(option);
+    }
+    sizeSelect.value = ownPlateSizeMode();
+    sizeSelect.onchange = () => setOwnPlateSizeMode(sizeSelect.value);
+    sizeRow.append(sizeCaption, sizeSelect);
+    display.append(sizeRow);
+
+    const titleScaleRow = el('label', 'paperdoll-display-option');
+    titleScaleRow.style.cssText = 'display:flex;align-items:center;gap:12px;min-height:38px;font-size:15px;line-height:1.4;font-weight:600;color:var(--text, #e7dfce);';
+    const titleScaleCaption = el('span', null, 'Custom title size');
+    const titleScale = el('input');
+    titleScale.type = 'range';
+    titleScale.min = '50'; titleScale.max = '200'; titleScale.step = '5';
+    titleScale.value = String(titleScalePercent());
+    titleScale.style.cssText = 'flex:1;min-width:90px;accent-color:#c9a45b;cursor:pointer;';
+    const titleScaleValue = el('span', null, `${titleScalePercent()}%`);
+    titleScaleValue.style.cssText = 'min-width:42px;text-align:right;font-variant-numeric:tabular-nums;';
+    titleScale.oninput = () => {
+      const value = setTitleScalePercent(titleScale.value);
+      titleScale.value = String(value);
+      titleScaleValue.textContent = `${value}%`;
+    };
+    titleScaleRow.append(titleScaleCaption, titleScale, titleScaleValue);
+    display.append(titleScaleRow);
     for (const [caption, read, write] of displayOptions) {
       const row = el('label', 'paperdoll-display-option');
       row.style.cssText = [
@@ -363,7 +398,7 @@ export function skinCard(doc, { sets: offer = skinSets, gender = () => null } = 
       box.type = 'checkbox';
       box.checked = read();
       box.style.cssText = 'width:18px;height:18px;flex:0 0 18px;margin:0;accent-color:#c9a45b;cursor:pointer;';
-      box.onchange = () => write(box.checked);
+      box.onchange = () => { write(box.checked); paint(); };
       row.append(box, el('span', null, caption));
       display.append(row);
     }

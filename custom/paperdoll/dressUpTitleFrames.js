@@ -7,7 +7,7 @@
 
 import { addGlow, pulseAt } from './goldGlow.js';
 
-export const TITLE_STRING = 'My Dress Up Darling';
+export const TITLE_STRING = 'My Dress-Up Darling';
 export const TITLE_FRAMES = 8;
 const S = 2;                        // texture pixels per font pixel
 const GW = 120, GH = 20;            // the picture in font pixels
@@ -33,6 +33,7 @@ const GLYPHS = Object.freeze({
   i: G(0, ['.#.', '...', '##.', '.#.', '.#.', '.#.', '###']),
   n: G(2, ['#.##.', '##..#', '#...#', '#...#', '#...#']),
   g: G(2, ['.####', '#...#', '#...#', '.####', '....#', '....#', '.###.']),
+  '-': G(4, ['#####']),
 });
 const SPACE = 3, GAP = 1;
 

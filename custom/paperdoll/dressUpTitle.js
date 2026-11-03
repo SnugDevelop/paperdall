@@ -6,11 +6,11 @@
 // Drawn as a billboard from frames made in code (dressUpTitleFrames.js), the way the golden halo is.
 
 import { CAPSULE_HEIGHT } from '../../src/player/motor.js';
-import { titleOn, haloOn } from './paperdollSetting.js';
+import { titleOn, headEffectOn, titleScalePercent } from './paperdollSetting.js';
 import { titleFrame, TITLE_W, TITLE_H, TITLE_FRAMES } from './dressUpTitleFrames.js';
 
 const TEXTURE_SET = 900002;     // beside the paperdoll's 900000 and the halo's 900001
-const WORLD_W = 1.2;            // the title's width, metres
+const WORLD_W = 1.2;            // the title's base width, metres
 const LIFT = 0.04;              // the gap over the head
 const HALO_SPACE = 0.36;        // the golden halo's height (goldHalo.js) and its gap - the title stands over it
 const FRAME_MS = 110;
@@ -18,12 +18,14 @@ const FRAME_MS = 110;
 let renderer_ = null;
 let frames = null;              // { key, batch } per frame
 let broken = false;
+let builtScale = null;
 
 function release() {
   if (renderer_ && frames) {
     for (const f of frames) { renderer_.destroyBillboardBatch?.(f.batch); renderer_.releaseTexture?.(TEXTURE_SET, f.key); }
   }
   frames = null;
+  builtScale = null;
 }
 
 function bottomFirst(rgba) {
@@ -35,15 +37,17 @@ function bottomFirst(rgba) {
 
 function build(renderer) {
   const list = [];
-  const worldH = (WORLD_W * TITLE_H) / TITLE_W;
+  const worldW = WORLD_W * (titleScalePercent() / 100);
+  const worldH = (worldW * TITLE_H) / TITLE_W;
   for (let i = 0; i < TITLE_FRAMES; i++) {
     const key = `dressup_title_${i}`;
     const px = bottomFirst(titleFrame(i));
     renderer.uploadTexture(TEXTURE_SET, key, { width: TITLE_W, height: TITLE_H, colors: new Uint32Array(px.buffer) });
-    const batch = renderer.createBillboardBatch(TEXTURE_SET, key, { w: WORLD_W, h: worldH }, [[0, 0, 0]]);
+    const batch = renderer.createBillboardBatch(TEXTURE_SET, key, { w: worldW, h: worldH }, [[0, 0, 0]]);
     batch.origin = [0, 0, 0];
     list.push({ key, batch });
   }
+  builtScale = titleScalePercent();
   return list;
 }
 
@@ -57,10 +61,11 @@ export function dressUpTitleDraw({ renderer, feet, camRight, bbUp, height = CAPS
   if (!renderer || !feet) return;
   try {
     if (renderer_ !== renderer) { release(); renderer_ = renderer; }
-    if (!frames) frames = build(renderer);
+    const scale = titleScalePercent();
+    if (!frames || builtScale !== scale) { release(); frames = build(renderer); }
     const f = frames[Math.floor(performance.now() / FRAME_MS) % frames.length];
     f.batch.origin[0] = feet[0];
-    f.batch.origin[1] = feet[1] + height + LIFT + (haloOn() ? HALO_SPACE : 0);
+    f.batch.origin[1] = feet[1] + height + LIFT + (headEffectOn() ? HALO_SPACE : 0);
     f.batch.origin[2] = feet[2];
     renderer.drawBillboards([f.batch], camRight, bbUp);
   } catch (err) {

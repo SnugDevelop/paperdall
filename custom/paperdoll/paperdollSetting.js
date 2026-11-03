@@ -66,9 +66,69 @@ export function haloOn() {
 
 export function setHalo(on) {
   haloCache = !!on;
-  try { appStorage()?.setItem(HALO_KEY, haloCache ? '1' : '0'); } catch { /* no storage */ }
+  if (haloCache) { fireHaloCache = false; snowHaloCache = false; }
+  try {
+    appStorage()?.setItem(HALO_KEY, haloCache ? '1' : '0');
+    if (haloCache) {
+      appStorage()?.setItem(FIRE_HALO_KEY, '0');
+      appStorage()?.setItem(SNOW_HALO_KEY, '0');
+    }
+  } catch { /* no storage */ }
   return haloCache;
 }
+
+// ---- alternative local head effects: animated flames or falling snow ----
+const FIRE_HALO_KEY = 'custom.paperdoll.fireHalo';
+const SNOW_HALO_KEY = 'custom.paperdoll.snowHalo';
+let fireHaloCache = null;
+let snowHaloCache = null;
+
+export function fireHaloOn() {
+  if (fireHaloCache === null) {
+    let v = null;
+    try { v = appStorage()?.getItem(FIRE_HALO_KEY); } catch { /* no storage */ }
+    fireHaloCache = v === '1';
+  }
+  return fireHaloCache;
+}
+
+export function snowHaloOn() {
+  if (snowHaloCache === null) {
+    let v = null;
+    try { v = appStorage()?.getItem(SNOW_HALO_KEY); } catch { /* no storage */ }
+    snowHaloCache = v === '1';
+  }
+  return snowHaloCache;
+}
+
+export function setFireHalo(on) {
+  fireHaloCache = !!on;
+  if (fireHaloCache) { haloCache = false; snowHaloCache = false; }
+  try {
+    appStorage()?.setItem(FIRE_HALO_KEY, fireHaloCache ? '1' : '0');
+    if (fireHaloCache) {
+      appStorage()?.setItem(HALO_KEY, '0');
+      appStorage()?.setItem(SNOW_HALO_KEY, '0');
+    }
+  } catch { /* no storage */ }
+  return fireHaloCache;
+}
+
+export function setSnowHalo(on) {
+  snowHaloCache = !!on;
+  if (snowHaloCache) { haloCache = false; fireHaloCache = false; }
+  try {
+    appStorage()?.setItem(SNOW_HALO_KEY, snowHaloCache ? '1' : '0');
+    if (snowHaloCache) {
+      appStorage()?.setItem(HALO_KEY, '0');
+      appStorage()?.setItem(FIRE_HALO_KEY, '0');
+    }
+  } catch { /* no storage */ }
+  return snowHaloCache;
+}
+
+/** Any of the mutually exclusive halo-style head effects is active. */
+export function headEffectOn() { return haloOn() || fireHaloOn() || snowHaloOn(); }
 
 // ---- the title "My Dress Up Darling" (custom/paperdoll/dressUpTitle.js, customTitle.js): over your head and on your profile ----
 const TITLE_KEY = 'custom.paperdoll.dressUpTitle';
@@ -89,6 +149,29 @@ export function setTitle(on) {
   titleCache = !!on;
   try { appStorage()?.setItem(TITLE_KEY, titleCache ? '1' : '0'); } catch { /* no storage */ }
   return titleCache;
+}
+
+
+// ---- scale for local overhead titles: both the custom gold title and the selected wardrobe title ----
+const TITLE_SCALE_KEY = 'custom.paperdoll.titleScale';
+const TITLE_SCALE_DEFAULT = 100;
+let titleScaleCache = null;
+
+/** Percentage scale for overhead title text/billboards (50-200%, default 100%). */
+export function titleScalePercent() {
+  if (titleScaleCache === null) {
+    let v = null;
+    try { v = Number(appStorage()?.getItem(TITLE_SCALE_KEY)); } catch { /* no storage */ }
+    titleScaleCache = Number.isFinite(v) && v >= 50 && v <= 200 ? Math.round(v / 5) * 5 : TITLE_SCALE_DEFAULT;
+  }
+  return titleScaleCache;
+}
+
+export function setTitleScalePercent(value) {
+  const n = Number(value);
+  titleScaleCache = Number.isFinite(n) ? Math.max(50, Math.min(200, Math.round(n / 5) * 5)) : TITLE_SCALE_DEFAULT;
+  try { appStorage()?.setItem(TITLE_SCALE_KEY, String(titleScaleCache)); } catch { /* no storage */ }
+  return titleScaleCache;
 }
 
 // ---- your own plate over your head (custom/paperdoll/ownPlate.js): your name, and your chosen title - both off until asked ----
@@ -126,4 +209,47 @@ export function setChosenTitle(on) {
   chosenTitleCache = !!on;
   try { appStorage()?.setItem(CHOSEN_TITLE_KEY, chosenTitleCache ? '1' : '0'); } catch { /* no storage */ }
   return chosenTitleCache;
+}
+
+
+// ---- the local overhead name/title size: dynamic camera scaling, or a consistently enlarged plate ----
+const OWN_PLATE_SIZE_KEY = 'custom.paperdoll.ownPlateSize';
+const OWN_PLATE_SIZE_DEFAULT = 'dynamic';
+let ownPlateSizeCache = null;
+
+/** 'dynamic' follows the game's normal nameplate scale; 'large' applies a fixed visual enlargement. */
+export function ownPlateSizeMode() {
+  if (ownPlateSizeCache === null) {
+    let v = null;
+    try { v = appStorage()?.getItem(OWN_PLATE_SIZE_KEY); } catch { /* no storage */ }
+    ownPlateSizeCache = v === 'large' ? 'large' : OWN_PLATE_SIZE_DEFAULT;
+  }
+  return ownPlateSizeCache;
+}
+
+export function setOwnPlateSizeMode(mode) {
+  ownPlateSizeCache = mode === 'large' ? 'large' : 'dynamic';
+  try { appStorage()?.setItem(OWN_PLATE_SIZE_KEY, ownPlateSizeCache); } catch { /* no storage */ }
+  return ownPlateSizeCache;
+}
+
+
+// ---- which local identity appears on the owner's overhead nameplate ----
+const CHARACTER_NAME_KEY = 'custom.paperdoll.characterName';
+let characterNameCache = null;
+
+/** False keeps the account name; true uses the active character's in-world name. */
+export function characterNameOn() {
+  if (characterNameCache === null) {
+    let v = null;
+    try { v = appStorage()?.getItem(CHARACTER_NAME_KEY); } catch { /* no storage */ }
+    characterNameCache = v === '1';
+  }
+  return characterNameCache;
+}
+
+export function setCharacterName(on) {
+  characterNameCache = !!on;
+  try { appStorage()?.setItem(CHARACTER_NAME_KEY, characterNameCache ? '1' : '0'); } catch { /* no storage */ }
+  return characterNameCache;
 }

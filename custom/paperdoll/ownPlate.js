@@ -17,13 +17,13 @@ import { appStorage } from '../../src/systems/appStorage.js';
 import { ownGlyphs } from '../../src/systems/ownGlyphs.js';
 import { playerEntity } from '../../src/characters/playerEntity.js';
 import { CAPSULE_HEIGHT } from '../../src/player/motor.js';
-import { ownNameOn, chosenTitleOn, titleOn, haloOn } from './paperdollSetting.js';
+import { ownNameOn, chosenTitleOn, titleOn, headEffectOn, ownPlateSizeMode, characterNameOn, titleScalePercent } from './paperdollSetting.js';
 
 const LIFT = 0.04;          // metres over the crown of the head
 const HALO_SPACE = 0.36;    // the golden halo's height and gap (goldHalo.js) - the plate stands over it
 const TITLE_SPACE = 0.26;   // the gold title's height and gap (dressUpTitle.js)
 const GAP_PX = 4;           // pixels between the plate's foot and the point it hangs from
-const OWN_TITLE_FONT_SIZE = '2.4em'; // enlarge only the local equipped title to match the custom gold title
+const LARGE_SCALE = 2.4;    // visual-only transform; does not alter nameplate layout or font metrics
 const GONE_MS = 300;        // the plate is put away when no frame has moved it for this long (a menu, first person)
 
 let host = null;            // the .dfnames layer
@@ -78,13 +78,6 @@ function stamp() {
 function buildNode(title, name, glyphs) {
   const n = namePlateNode(document, { title, glyphs, name, lv: null });
   if (!title) n.querySelector('.dfname-title')?.remove();
-  else {
-    // The shared nameplate stylesheet deliberately makes titles much smaller than names.
-    // This local-only plate should give the player's equipped title comparable visual weight
-    // to the custom billboard title without changing other players' nameplates.
-    const titleNode = n.querySelector('.dfname-title');
-    if (titleNode) titleNode.style.fontSize = OWN_TITLE_FONT_SIZE;
-  }
   if (!name) n.querySelector('.dfname-tag')?.remove();
   return n;
 }
@@ -101,8 +94,11 @@ export function ownPlateDraw({ canvas, proj, view, feet, height = CAPSULE_HEIGHT
   try {
     const s = sessionNow();
     const title = wantTitle ? chosenTitleKey(s) : null;
-    const name = wantName ? (typeof s?.name === 'string' && s.name ? s.name : (playerEntity?.name ?? '')) : '';
-    const glyphs = wantName ? ownGlyphs() : [];
+    const useCharacterName = characterNameOn();
+    const characterName = typeof playerEntity?.name === 'string' ? playerEntity.name : '';
+    const accountName = typeof s?.name === 'string' ? s.name : '';
+    const name = wantName ? (useCharacterName ? characterName : (accountName || characterName)) : '';
+    const glyphs = wantName && !useCharacterName ? ownGlyphs() : [];
     if (!title && !name) { hide(); return; }
     const root = ensureHost();
     const key = `${title ?? ''}|${name}|${glyphs.join(',')}`;
@@ -112,11 +108,18 @@ export function ownPlateDraw({ canvas, proj, view, feet, height = CAPSULE_HEIGHT
       node = buildNode(title, name, glyphs);
       root.append(node);
     }
-    const up = height + LIFT + (haloOn() ? HALO_SPACE : 0) + (titleOn() ? TITLE_SPACE : 0);
+    const titleNode = node.querySelector('.dfname-title');
+    if (titleNode) {
+      titleNode.style.transformOrigin = 'bottom center';
+      titleNode.style.transform = `scale(${titleScalePercent() / 100})`;
+    }
+    const up = height + LIFT + (headEffectOn() ? HALO_SPACE : 0) + (titleOn() ? TITLE_SPACE : 0);
     const rect = canvas.getBoundingClientRect();
     const p = projectToScreen([feet[0], feet[1] + up, feet[2]], rect.width, rect.height, proj, view, null, false);
     if (!p?.front) { hide(); return; }
-    node.style.transform = `translate(${Math.round(rect.left + p.x)}px, ${Math.round(rect.top + p.y - GAP_PX)}px) translate(-50%, -100%)`;
+    const scale = ownPlateSizeMode() === 'large' ? LARGE_SCALE : 1;
+    node.style.transformOrigin = 'bottom center';
+    node.style.transform = `translate(${Math.round(rect.left + p.x)}px, ${Math.round(rect.top + p.y - GAP_PX)}px) translate(-50%, -100%) scale(${scale})`;
     root.style.display = '';
     stamp();
   } catch (err) {
@@ -131,5 +134,5 @@ globalThis.__paperdollPlate = () => ({
   sessionKeys: Object.keys(sessionNow() ?? {}),
   chosenTitle: chosenTitleKey(sessionNow()),
   name: sessionNow()?.name ?? playerEntity?.name ?? null,
-  wantName: ownNameOn(), wantTitle: chosenTitleOn(), broken,
+  wantName: ownNameOn(), wantTitle: chosenTitleOn(), characterName: characterNameOn(), broken,
 });
