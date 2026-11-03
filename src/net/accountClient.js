@@ -1476,10 +1476,10 @@ export function storedSession(storage) {
  *  NEVER PART OF THIS - `register`, `recover` and `newRecoveryCodes`
  *  hand them back and they are the screen's to show and the player's to
  *  write down. */
-export function keepSession(storage, { id, name, kind, sessionId, secret, glyphs, aura, icon, armory, effects, nameAsAt }) {
+export function keepSession(storage, { id, name, kind, sessionId, secret, glyphs, aura, icon, armory, effects, nameAsAt, title, ts }) {
   try {
     // ARMORY-SEEN: every field adoptIdentity writes is kept here - a field it writes and this drops never lands (AUDIT-STOREFRONT: the effects kit was one)
-    storage?.setItem?.(SESSION_KEY, JSON.stringify({ id, name, kind, sessionId, secret, glyphs, aura, icon, armory, effects, nameAsAt }));   // SHADOW-FANG: `glyphs` when the service has stated them (adoptIdentity) - JSON leaves it out otherwise; WB9g: `aura` likewise; WITCH1: `icon` likewise; NAME-AS: `nameAsAt` likewise
+    storage?.setItem?.(SESSION_KEY, JSON.stringify({ id, name, kind, sessionId, secret, glyphs, aura, icon, armory, effects, nameAsAt, title, ts }));   // SHADOW-FANG: `glyphs` when the service has stated them (adoptIdentity) - JSON leaves it out otherwise; WB9g: `aura` likewise; WITCH1: `icon` likewise; NAME-AS: `nameAsAt` likewise
     return true;
   } catch { return false; }
 }
@@ -1539,15 +1539,20 @@ export function keepSession(storage, { id, name, kind, sessionId, secret, glyphs
  * profile mark and the account card read it here (systems/ownGlyphs.js ownIcon).
  *
  * @param {any} storage
- * @param {{ name?: string, kind?: string, glyphs?: string[], glyphsOff?: string[], aura?: string|null, armory?: string|null, effects?: string|null, icon?: string|null, nameAsAt?: number, secret?: string }} [who]
+ * @param {{ name?: string, kind?: string, title?: string|null, ts?: unknown[]|null, glyphs?: string[], glyphsOff?: string[], aura?: string|null, armory?: string|null, effects?: string|null, icon?: string|null, nameAsAt?: number, secret?: string }} [who]
  */
-export function adoptIdentity(storage, { name, kind, glyphs, glyphsOff, aura, armory, effects, icon, nameAsAt, secret } = {}) {
+export function adoptIdentity(storage, { name, kind, title, ts, glyphs, glyphsOff, aura, armory, effects, icon, nameAsAt, secret } = {}) {
   const was = storedSession(storage);
   if (!was) return false;
   if (typeof secret === 'string' && was.secret !== secret) return false;
   const next = { ...was };
   if (typeof name === 'string' && name) next.name = name;
   if (kind === 'guest' || kind === 'linked') next.kind = kind;
+  // TITLE-LOCAL: keep the service-issued equipped title on this device too. The live room
+  // token already carries it to other players; ownPlate reads the stored session locally.
+  // `undefined` means an older response did not state the field; `null` means no title worn.
+  if (title !== undefined) next.title = typeof title === 'string' && title ? title : null;
+  if (ts !== undefined) next.ts = Array.isArray(ts) ? ts : null;
   const off = Array.isArray(glyphsOff) ? glyphsOff : [];   // GLYPH-WEAR
   if (Array.isArray(glyphs)) next.glyphs = glyphs.filter((g) => typeof g === 'string' && g.length <= 24 && !off.includes(g)).slice(0, 16);
   if (aura !== undefined) next.aura = typeof aura === 'string' && AURAS.includes(aura) ? aura : null;   // WB9g: one that exists, or none
@@ -1556,8 +1561,9 @@ export function adoptIdentity(storage, { name, kind, glyphs, glyphsOff, aura, ar
   if (effects !== undefined) next.effects = effectKitOk(effects) ? effects : null;   // STOREFRONT: likewise
   if (Number.isSafeInteger(nameAsAt) && nameAsAt > 0 && !(Number.isSafeInteger(was.nameAsAt) && was.nameAsAt >= nameAsAt)) next.nameAsAt = nameAsAt;   // NAME-AS: forward only
   const sameGlyphs = (next.glyphs ?? []).join('+') === (was.glyphs ?? []).join('+');
-  const sameAura = (next.aura ?? null) === (was.aura ?? null) && (next.icon ?? null) === (was.icon ?? null) && (next.armory ?? null) === (was.armory ?? null) && (next.effects ?? null) === (was.effects ?? null);   // WITCH1: and the icon; ARMORY: and the kit; STOREFRONT: and the effects
-  if (next.name === was.name && next.kind === was.kind && sameGlyphs && sameAura && next.nameAsAt === was.nameAsAt) return false;   // nothing to write, and a write is a storage event every open tab hears
+  const sameAura = (next.aura ?? null) === (was.aura ?? null) && (next.icon ?? null) === (was.icon ?? null) && (next.armory ?? null) === (was.armory ?? null) && (next.effects ?? null) === (was.effects ?? null);
+  const sameTitle = (next.title ?? null) === (was.title ?? null) && JSON.stringify(next.ts ?? null) === JSON.stringify(was.ts ?? null);   // WITCH1: and the icon; ARMORY: and the kit; STOREFRONT: and the effects
+  if (next.name === was.name && next.kind === was.kind && sameGlyphs && sameAura && sameTitle && next.nameAsAt === was.nameAsAt) return false;   // nothing to write, and a write is a storage event every open tab hears
   return keepSession(storage, next);
 }
 
