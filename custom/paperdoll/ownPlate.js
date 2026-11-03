@@ -23,6 +23,7 @@ const LIFT = 0.04;          // metres over the crown of the head
 const HALO_SPACE = 0.36;    // the golden halo's height and gap (goldHalo.js) - the plate stands over it
 const TITLE_SPACE = 0.26;   // the gold title's height and gap (dressUpTitle.js)
 const GAP_PX = 4;           // pixels between the plate's foot and the point it hangs from
+const OWN_TITLE_FONT_SIZE = '2.4em'; // enlarge only the local equipped title to match the custom gold title
 const GONE_MS = 300;        // the plate is put away when no frame has moved it for this long (a menu, first person)
 
 let host = null;            // the .dfnames layer
@@ -77,6 +78,13 @@ function stamp() {
 function buildNode(title, name, glyphs) {
   const n = namePlateNode(document, { title, glyphs, name, lv: null });
   if (!title) n.querySelector('.dfname-title')?.remove();
+  else {
+    // The shared nameplate stylesheet deliberately makes titles much smaller than names.
+    // This local-only plate should give the player's equipped title comparable visual weight
+    // to the custom billboard title without changing other players' nameplates.
+    const titleNode = n.querySelector('.dfname-title');
+    if (titleNode) titleNode.style.fontSize = OWN_TITLE_FONT_SIZE;
+  }
   if (!name) n.querySelector('.dfname-tag')?.remove();
   return n;
 }
