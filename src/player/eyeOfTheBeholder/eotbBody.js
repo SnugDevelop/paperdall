@@ -78,6 +78,7 @@ import { createBackShieldArt, backShieldSeen, BACK_SHIELD } from './eotbBackShie
 import { ammoCountFor } from '../../systems/inventory.js';   // QUIVER: arrows in it, with no rig to say
 import { goldHaloDraw } from '../../../custom/paperdoll/goldHalo.js'; // custom/paperdoll: the golden halo over the player's head
 import { elementalHaloDraw } from '../../../custom/paperdoll/elementalHalo.js'; // custom/paperdoll: local fire and frost head effects
+import { pinkDevilHaloDraw } from '../../../custom/paperdoll/pinkDevilHalo.js'; // custom/paperdoll: the pink devil halo
 import { dressUpTitleDraw } from '../../../custom/paperdoll/dressUpTitle.js'; // custom/paperdoll: the gold title over the halo
 import { ownPlateDraw } from '../../../custom/paperdoll/ownPlate.js'; // custom/paperdoll: your own name and chosen title, over all
 import { paperdollDraw } from '../../../custom/paperdoll/paperdollExtensions.js';   // custom/paperdoll: the player's own paperdoll stands in for the sprite in third person
@@ -1188,6 +1189,7 @@ export function createEotbBody({ count = spriteCount, urlFor = eotbSpriteUrl, de
       if (!FP && grow === 1 && !last.riding && !last.transformed && !died && !last.died) {
         goldHaloDraw({ renderer, feet: cam.feet, camRight, bbUp });
         elementalHaloDraw({ renderer, feet: cam.feet, camRight, bbUp });
+        pinkDevilHaloDraw({ renderer, feet: cam.feet, camRight, bbUp });
         dressUpTitleDraw({ renderer, feet: cam.feet, camRight, bbUp });
         ownPlateDraw({ canvas, proj, view, feet: cam.feet });
       }

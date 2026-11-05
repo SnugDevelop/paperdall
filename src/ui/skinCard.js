@@ -65,7 +65,7 @@ import { spriteFor, eotbSpriteUrl } from '../player/eyeOfTheBeholder/eotbSprite.
 import { EOTB_FOOT_SET_COUNT } from '../player/classSkins.js';
 import { layeredPreviewUrl, layeredGenderOf, LAYERED_OWN } from '../player/eyeOfTheBeholder/layeredArmor.js'; // LAYERED-GEAR
 import { t } from '../systems/textManager.js';
-import { isEnabled as paperdollOn, setEnabled as setPaperdoll, backSpriteOn, setBackSprite, haloOn, setHalo, fireHaloOn, setFireHalo, snowHaloOn, setSnowHalo, titleOn, setTitle, ownNameOn, setOwnName, chosenTitleOn, setChosenTitle, ownPlateSizeMode, setOwnPlateSizeMode, characterNameOn, setCharacterName, titleScalePercent, setTitleScalePercent } from '../../custom/paperdoll/paperdollSetting.js'; // custom/paperdoll: the Paperdoll look
+import { isEnabled as paperdollOn, setEnabled as setPaperdoll, backSpriteOn, setBackSprite, ownNameOn, setOwnName, chosenTitleOn, setChosenTitle, ownPlateSizeMode, setOwnPlateSizeMode, characterNameOn, setCharacterName, titleScalePercent, setTitleScalePercent } from '../../custom/paperdoll/paperdollSetting.js'; // custom/paperdoll: the Paperdoll look
 
 const VENDOR = 'eye-of-the-beholder';
 const FOOT = 'Graphics.OnFoot';
@@ -334,13 +334,10 @@ export function skinCard(doc, { sets: offer = skinSets, gender = () => null } = 
       panel('On foot', FOOT, sets.foot, w.foot, FOOT_GROUPS);
     }
     panel('Mounted', HORSE, sets.horse, w.horse, [{ label: '', from: 0, to: Infinity }]);
-    // custom/paperdoll: local-only effects and overhead plate options.
+    // custom/paperdoll: local-only overhead plate options. The halos and the My Dress Up Darling title moved to the
+    // profile's Cosmetics and Titles tabs (custom/paperdoll/localCosmetics.js).
     // Render as one prominent settings group instead of scattered tiny labels.
     displayOptions.push(
-      [t('skin.halo', 'Golden halo with sparkles (only you see it)'), haloOn, setHalo],
-      ['Flaming halo — rising flames (only you see it)', fireHaloOn, setFireHalo],
-      ['Frost halo — falling snowflakes (only you see it)', snowHaloOn, setSnowHalo],
-      [t('skin.dressup', 'Show my title, My Dress Up Darling (only you see it)'), titleOn, setTitle],
       [t('skin.ownName', 'Show my name above my head (only you see it)'), ownNameOn, setOwnName],
       ['Use character name instead of account name', characterNameOn, setCharacterName],
       [t('skin.ownTitle', 'Show my chosen title above my head (only you see it)'), chosenTitleOn, setChosenTitle],

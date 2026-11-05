@@ -22,7 +22,8 @@ import {
 import { armoryPieceName, armorySlotName, armoryLineName, ARMORY_LOOK } from './armoryText.js';
 import { namePlateNode } from './namePlate.js';
 import { dressUpTitleNode } from '../../custom/paperdoll/customTitle.js'; // custom/paperdoll: the client's own gold title
-import { titleOn } from '../../custom/paperdoll/paperdollSetting.js';
+import { titleOn, setLocalHalo } from '../../custom/paperdoll/paperdollSetting.js';
+import { LOCAL_HALOS, activeLocalHalo, localLook, pillNode } from '../../custom/paperdoll/localCosmetics.js'; // custom/paperdoll: the client's own halos, offered in the Head slot
 import { EFFECT_SLOTS, EFFECTS, effectWorn } from '../net/effectLaw.js'; // STOREFRONT: the effects' slots
 import { effectName, effectLook, effectSlotName } from './effectText.js';
 import { effectEmblemNode } from './effectEmblems.js'; // AUDIT-STOREFRONT: each choice's emblem beside its name
@@ -294,8 +295,10 @@ export function characterSlots(
             : worn.kind === 'effect' && worn.key
               ? cls('acttitle', 'acteffect', `fx-${s.id}-${worn.key}`)
               : ''; // STOREFRONT: an effect in its own colour
+    // custom/paperdoll: a local halo stands in the Head tile when no armory piece is worn
+    const localHalo = s.id === 'head' && !worn.key ? activeLocalHalo() : null;
     const b = keyedAs(
-      el('button', cls('slottile', paint, picked === s.id && 'on', !worn.key && 'empty')),
+      el('button', cls('slottile', paint, picked === s.id && 'on', !worn.key && !localHalo && 'empty')),
       `slot:${s.id}`,
     );
     b.type = 'button';
@@ -304,8 +307,9 @@ export function characterSlots(
     const word = el(
       'span',
       cls('slotworn', worn.kind === 'title' ? 'acttitleword' : paint && 'actauraword'),
-      worn.word ?? t('account.slots.none', 'None'),
+      worn.word ?? localHalo?.name ?? t('account.slots.none', 'None'),
     );
+    if (localHalo) word.style.color = localHalo.color;
     if (worn.kind === 'title' && worn.key) setTitleFlame(word, worn.key);
     if (worn.kind === 'icon' && worn.key) {
       const art = profileIconNode(doc, worn.key, 'sloticon', 18, { arms: null });
@@ -390,6 +394,9 @@ export function characterSlots(
   function lookText() {
     const slot = trial?.slot ?? picked;
     const key = trial ? trial.key : slotWorn(flow.wardrobe, picked).key;
+    // custom/paperdoll: a local halo pointed at, or worn in the Head slot with no armory piece
+    if (slot === 'localhalo') return localLook(LOCAL_HALOS.find((h) => h.id === key));
+    if (!key && slot === 'head' && activeLocalHalo()) return localLook(activeLocalHalo());
     if (!key && slot === 'portal') return t('account.slots.portalNone', 'Your portals open as the violet vortex.'); // STOREFRONT: the vortex playing
     if (!key) return t('account.slots.hint', 'Point at a choice to see it on you. Press it to wear it.');
     if (ARMORY_SLOTS.includes(slot)) {
@@ -533,7 +540,19 @@ export function characterSlots(
       // ARMORY: the slot's pieces - held ones worn on a press, the rest tried on and told how they are had
       const held = Array.isArray(w.armoryHeld) ? w.armoryHeld : [];
       const worn = armoryKitPieces(w.armory)[picked] ?? null;
-      row.append(none(picked, !worn, () => flow.wearArmory(picked, null)));
+      const localOn = picked === 'head' ? activeLocalHalo() : null; // custom/paperdoll: the Head's None bares the local halo too
+      row.append(
+        none(picked, !worn && !localOn, () => {
+          if (localOn) {
+            setLocalHalo(null);
+            if (!worn) {
+              repaint();
+              return;
+            }
+          }
+          return flow.wearArmory(picked, null);
+        }),
+      );
       for (const p of ARMORY_PIECES.filter((x) => x.slot === picked)) {
         const own = held.includes(p.key),
           on = worn === p.key;
@@ -553,6 +572,21 @@ export function characterSlots(
             ? t('account.wear.worn', 'Worn. Press to take it off.')
             : t('account.wear.wear', 'Wear {name}', { name: armoryPieceName(p.key) });
         row.append(choice(b, { slot: picked, key: p.key }, () => flow.wearArmory(picked, p.key), !own));
+      }
+      // custom/paperdoll: the client's own halos, last in the Head slot's row - pointed at to try, pressed to wear
+      if (picked === 'head') {
+        for (const h of LOCAL_HALOS) {
+          try {   // a local extra never breaks the picker it sits in
+            const on = localOn?.id === h.id;
+            const b = keyedAs(pillNode(doc, h, on), `pick:head:local:${h.id}`);
+            row.append(
+              choice(b, { slot: 'localhalo', key: h.id }, () => {
+                setLocalHalo(on ? null : h.id);
+                repaint();
+              }),
+            );
+          } catch (err) { console.warn('[paperdoll] a local halo would not draw in the Head picker', err); }
+        }
       }
       box.append(row);
       // a line held whole: its every piece at once (the set's own door)

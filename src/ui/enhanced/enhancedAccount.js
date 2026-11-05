@@ -29,6 +29,7 @@
 import { STAGES, FIELDS, FIELD_SPEC, AGREEMENTS, AGREEMENT_SPEC, recoveryCodesText, recoveryCodesFileName } from '../accountFlow.js';   // RECOVERY-SET: the codes as the saved file says them
 import { profileIconNode, ICON_TEXT } from '../profileIcons.js';   // WITCH1: the profile icons, worn in the portrait well
 import { TITLE_TEXT, glyphBadges, glyphArtNode, badgeClass } from '../playerBadge.js';
+import { cornerButtons, localPanel } from '../../../custom/paperdoll/localCosmetics.js';   // custom/paperdoll: the Cosmetics and Titles tabs
 import { characterSlots } from '../characterSlots.js';   // PROFILE-SLOTS: the character on its stage between its slots - the wardrobe's picker now
 import { setTitleFlame } from '../titleFlame.js';   // SHOP: a flame title's plate - a class, as every colour here is   // ACC3c: the SAME table the name over a head reads, so the picker shows what a player will actually wear - the COLOUR is the skin's (this card may not style itself, and a pin holds that)
 import { duelRecordText } from '../../net/duel/duelRecord.js';   // DUEL1: the account card's K/D row
@@ -353,6 +354,9 @@ export function accountCard(doc, flow, { onClose = null, face = null, character 
     who: () => ({ name: flow.account?.name ?? '', lv: renownTracksOfCard(flow.account?.renown)[0]?.level ?? null }),
   });
 
+  /** custom/paperdoll: the local tab open under the plate - null, 'cosmetics' or 'titles' - kept for the card's life. */
+  let localView = null;
+
   function paint() {
     const stage = STAGES.includes(flow.stage) ? flow.stage : 'out';
     // AUDIT TERMS1 T3: what the keyboard is on, before the card it is on is taken down
@@ -492,6 +496,10 @@ export function accountCard(doc, flow, { onClose = null, face = null, character 
     let head = root;
     if (signedIn) {
       const plate = el('div', 'acctplate');
+      // custom/paperdoll: Cosmetics at the top left, Titles at the top right - the client's own, opened under the plate
+      try {
+        plate.append(cornerButtons(doc, localView, (v) => { localView = v; paint(); }, (n, key) => keyedAs(n, key)));
+      } catch (err) { console.warn('[paperdoll] the Cosmetics and Titles buttons would not draw', err); }   // never lets a local extra break the card
       plate.append(portrait());
       head = el('div', 'acctident');
       plate.append(head);
@@ -524,6 +532,10 @@ export function accountCard(doc, flow, { onClose = null, face = null, character 
 
     // ── THE SIGNED-IN PROFILE ───────────────────────────────────────
     if (signedIn) {
+      if (localView) {   // custom/paperdoll
+        try { root.append(localPanel(doc, localView, { keyedAs: (n, key) => keyedAs(n, key), repaint: paint })); }
+        catch (err) { console.warn('[paperdoll] the Cosmetics/Titles tab would not draw', err); }
+      }
       root.append(charSlots.node(paint));   // PROFILE-SLOTS: the character, the whole window's width, under the plate
       const grid = el('div', 'acctgrid');
       const deeds = el('div', 'acctcol');
