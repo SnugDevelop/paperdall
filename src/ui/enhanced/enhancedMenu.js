@@ -168,6 +168,7 @@ import { drawPixelGround } from '../pixelGround.js';
 // Both are plain modules with no game data; the boot door never
 // renders the tab, so the front door still reads no game state.
 import { sheetModel } from './enhancedCharSheet.js';
+import { injectAssistStyle, railBreak, STATS_GROUPS, SYSTEM_GROUPS, tabTip, railTip, dotNode, keycapNode, pauseHotkeys } from '../../../custom/menu/menuAssist.js';   // custom/menu: grouped rails, tips, dots and the tab keys
 import { profPagesShown, PROF_PAGE_SECTIONS, drawProfessionsPage, drawStoresPage, resetProfPages, profActUnderWay, setDownProfAct } from '../professions/profPages.js';   // PROF1: the Professions and Stores pages, online
 import { drawCraftingPage, PROF_STATS_PAGES } from '../professions/profPages.js';   // CRAFT-HALL
 import { boundKeyName } from '../tutorialPopup.js';   // CRAFT-HALL: names the Professions key on the Crafting page
@@ -3167,7 +3168,7 @@ function portRowsInterface({ pause = false } = {}) {
   out.push(prefRow('shopHidden', t('menu.shop.hide', 'Hide the shop'),
     t('menu.shop.hideNote', 'Take the shop off the pause screen. Your Aurum and your items stay on your account.')));   // SHOP-HIDE
   out.push(prefRow('standingAll', 'Every faction\'s standing',
-    'Show your reputation with every guild, temple, knightly order, kingdom, coven, vampire clan and Daedric Prince on the character sheet\'s Standing page, including ones you don\'t belong to.'));   // EVERY-STANDING
+    'Show your reputation with every guild, temple, knightly order, kingdom, coven, vampire clan and Daedric Prince on the character sheet\'s Reputation page, including ones you don\'t belong to.'));   // EVERY-STANDING
   if (isEnhanced()) out.push(...hudLayoutRows());   // HUD-MOVE: the Enhanced Plus HUD's own - Classic draws none of it
   // FOEBAR1: the target bar's face is a two-way choice, not a switch - the
   // stick-position row's shape: a row whose button names the OTHER option.
@@ -4931,13 +4932,22 @@ const PAUSE_TEXT = Object.freeze({
   character: () => t('pause.stats.character', 'Character'),
   attributes: () => localizedText('helpAttributes', 'Attributes'),
   skills: () => localizedText('helpSkills', 'Skills'),
-  specials: () => t('pause.stats.advantages', 'Advantages'),
-  standing: () => t('pause.stats.standing', 'Standing'),
+  specials: () => t('pause.stats.advantages', 'Advantages & Disadvantages'),
+  standing: () => t('pause.stats.standing', 'Reputation'),
   effects: () => t('pause.stats.effects', 'Effects'),
 });
 const pauseLabel = (id, label) => PAUSE_TEXT[id]?.() ?? label;
 // The token formattings that carry a journal line - questJournal's own
 // counted set (DaggerfallQuestJournalWindow.cs:658-662 via its :322).
+
+/** custom/menu: how much waits in the Growth tab (a level owed, a path open, stars unspent). Never throws. */
+function growthWaiting() {
+  try { return Object.values(growthDue({ entity: playerEntity, captain: holdingsProvider()?.captain ?? null })).reduce((a, b) => a + b, 0); } catch { return 0; }
+}
+/** custom/menu: how many skills are ready to be mastered. Never throws. */
+function masterWaiting() {
+  try { return sheetModel(playerEntity).master?.candidates?.length ?? 0; } catch { return 0; }
+}
 
 function pauseWindow() {
   const win = el('div', 'px-win');
@@ -4948,9 +4958,14 @@ function pauseWindow() {
   for (const [id, label] of PAUSE_TABS.filter(([id]) => pauseTabShown(id))) {
     const b = el('button', id === pauseTab ? 'on' : null);
     b.append(el('span', 'px-c', '\u25c6'), document.createTextNode(pauseLabel(id, label)), el('span', 'px-c', '\u25c6'));
+    b.dataset.tab = id;   // custom/menu: the System rail's Tutorials door presses this one
+    tabTip(b, id);
+    if (id === 'growth' && growthWaiting() > 0) b.append(dotNode(document, t('pause.dot.growth', 'Something is waiting in Growth')));
+    if (id === 'stats' && masterWaiting() > 0) b.append(dotNode(document, t('pause.dot.stats', 'A skill is ready to master')));
     b.onclick = () => { if (pauseTab === 'growth' && id !== 'growth' && growthAsks()) return; if (id !== 'system') discardControlsStaging(); disarmFamilyPages(); disarmCollectionsPage(); if (id !== 'growth') releaseGrowthTab(); pauseTab = id; render(); };   // AUDIT CARDS-5 D5: and the Collections page's - GROWTH3: and a face on the Growth stage
     tabs.append(b);
   }
+  tabs.append(keycapNode(document, 'Q', 'prev'), keycapNode(document, 'E', 'next'));   // custom/menu: the keys that step between tabs
   win.append(tabs);
 
   const body = el('div', 'px-body');
@@ -4986,6 +5001,7 @@ function pauseHoldings(body) {
   for (const [id, label] of secs) {
     const b = el('button', `px-qrow${id === holdSec ? ' on' : ''}`);
     b.append(el('span', 'px-c', '◆'), document.createTextNode(label));
+    railTip(b, id);   // custom/menu
     b.onclick = () => { holdSec = id; disarmCollectionsPage(); render(); };   // AUDIT CARDS-5 D5: an armed act never waits for the way back
     rail.append(b);
   }
@@ -5068,9 +5084,19 @@ export const SYSTEM_PANES = Object.freeze([
 function pauseSystem(body) {
   const wrap = el('div', 'px-journal');
   const rail = el('div', 'px-qrail');
-  for (const [id, label] of SYSTEM_PANES) {
-    const b = el('button', `px-qrow${id === sysSec && !RAIL_ACTS[id] ? ' on' : ''}`);
-    b.append(el('span', 'px-c', '\u25c6'), document.createTextNode(railLabel(label)));   // L10N4: the rail's own words
+  rail.dataset.assist = 'acts';   // custom/menu: this rail's rows act (Resume, Exit) - the number keys leave it alone
+  // custom/menu: the Tutorials tab's door, here too, with Help's company (About) - the tab stays where it was
+  const panes = [...SYSTEM_PANES];
+  panes.splice(Math.max(0, panes.findIndex(([id]) => id === 'about')), 0, ['tutorials', 'Tutorials']);
+  let prevPane = null;
+  for (const [id, label] of panes) {
+    const brk = railBreak(document, SYSTEM_GROUPS, prevPane, id);
+    if (brk) rail.append(brk);
+    prevPane = id;
+    const b = el('button', `px-qrow${id === sysSec && !RAIL_ACTS[id] && id !== 'tutorials' ? ' on' : ''}`);
+    b.append(el('span', 'px-c', '\u25c6'), document.createTextNode(id === 'tutorials' ? pauseLabel('tutorials', label) : railLabel(label)));   // L10N4: the rail's own words
+    railTip(b, id);
+    if (id === 'tutorials') { b.onclick = () => app?.querySelector?.('.px-tabs button[data-tab="tutorials"]')?.click(); rail.append(b); continue; }
     b.onclick = RAIL_ACTS[id] ? () => onAction(RAIL_ACTS[id])
       : () => {
         // FIX-F: leaving the Controls pane without CONTINUE DISCARDS -
@@ -5112,7 +5138,7 @@ function pauseSystem(body) {
 // the three reputation stores the talk and court systems read.
 const STATS_SECTIONS = Object.freeze([
   ['character', 'Character'], ['attributes', 'Attributes'],
-  ['skills', 'Skills'], ['specials', 'Advantages'], ['standing', 'Standing'],
+  ['skills', 'Skills'], ['specials', 'Advantages & Disadvantages'], ['standing', 'Reputation'],
   ['effects', 'Effects'],   // BUFF-END: the spells on you, and an End on the ones that are yours to end
 ]);
 // The five NAMED social groups getReactionToPlayer reads
@@ -5182,9 +5208,15 @@ function pauseStats(body) {
   // into the Character page; it stands while the sheet has a Master Skills model to draw it from
   const offRail = statsSec === 'master' && !!m.master;
   if (!offRail && !statsSections().some(([id]) => id === statsSec)) statsSec = 'character';
+  let prevId = null;   // custom/menu: a thin rule between you, your standing, and what you do
   for (const [id, label] of statsSections()) {
+    const brk = railBreak(document, STATS_GROUPS, prevId, id);
+    if (brk) rail.append(brk);
+    prevId = id;
     const b = el('button', `px-qrow${id === statsSec ? ' on' : ''}`);
     b.append(el('span', 'px-c', '\u25c6'), document.createTextNode(pauseLabel(id, label)));
+    railTip(b, id);
+    if (id === 'skills' && m.master?.candidates?.length) b.append(dotNode(document, t('pause.dot.skills', 'A skill is ready to master')));
     b.onclick = () => { statsSec = id; render(); };
     rail.append(b);
   }
@@ -5236,24 +5268,12 @@ function pauseStats(body) {
   // chosen"). It opens a page of THIS window (statsSec 'master'), so it neither resumes nor hands off; the page's own
   // button comes back to Skills. A count on the button when a mastery is waiting (GROWTH2: a specialisation waiting is
   // the Growth door's count now - its guide moved there).
-  const masterDoor = m.master ? (() => {
-    const n = m.master.candidates?.length ?? 0;
-    const b = el('button', n ? 'act primary' : 'act', n ? t('pause.door.masterCount', 'Master Skills ({n})', { n }) : t('pause.master.title', 'Master Skills'));
-    b.onclick = () => { statsSec = 'master'; _masterNote = null; render(); };
-    return b;
-  })() : null;
-  // GROWTH1 (bible/10-UI/Growth.md section 3; the owner, asked: "Move them"): THE GROWTH DOOR where Ascend and the
-  // Firmament stood (ASCEND-ANYTIME's and FIRM1's) - both moved to the Growth tab with the specialisations and the
-  // captain's stars, drawn in its pane. A page of this window, so it neither resumes nor hands off; a count on it when
-  // something waits there (a level owed, a path open, the captain's points).
+  // custom/menu: one row of doors. Master Skills is on the Skills page now (statsSkills), where a player looks for it.
   if (statsSec !== 'master') {
-    const row = el('div', 'px-sheetdoors');
-    const n = Object.values(growthDue({ entity: playerEntity, captain: holdingsProvider()?.captain ?? null })).reduce((a, b) => a + b, 0);
+    const n = growthWaiting();
     const g = el('button', n ? 'act primary' : 'act', n ? t('pause.door.growthCount', 'Growth ({n})', { n }) : t('pause.door.growth', 'Growth'));
     g.onclick = () => { pauseTab = 'growth'; render(); };
-    row.append(g);
-    if (masterDoor) row.append(masterDoor);
-    detail.append(row);
+    (detail.querySelector?.('.px-sheetdoors') ?? (() => { const r = el('div', 'px-sheetdoors'); detail.append(r); return r; })()).append(g);
   }
   wrap.append(detail);
   body.append(wrap);
@@ -5491,8 +5511,26 @@ export function skillTickText(p) {
   if (p.ready) return t('pause.skills.tickReady', 'Ready - rest or travel to raise it');
   return t('pause.skills.tick', '{have} / {need} uses to the next point', { have: p.have, need: p.need });
 }
+/** custom/menu: THE MASTER SKILLS DOOR, on the Skills page (it stood on every Stats page beside Growth). Its count lights when a
+ *  mastery is waiting; the page it opens (statsMaster) comes back here. */
+function masterCard(m) {
+  const ms = m.master;
+  if (!ms) return null;
+  const n = ms.candidates?.length ?? 0;
+  const card = el('div', 'px-assist-master');
+  card.append(el('div', 'px-assist-blurb', !ms.on
+    ? (ms.switchable ? t('pause.master.offClassic', 'Off \u2013 your skills stop at 100, as in the original game.') : t('pause.master.off', 'Off.'))
+    : t('pause.master.on', 'Choose the skills that may climb past 100, up to 200. A choice is permanent.')));
+  const b = el('button', n ? 'act primary' : 'act', n ? t('pause.door.masterCount', 'Master Skills ({n})', { n }) : t('pause.master.title', 'Master Skills'));
+  b.onclick = () => { statsSec = 'master'; _masterNote = null; render(); };
+  card.append(b);
+  return card;
+}
+
 function statsSkills(detail, m) {
   if (m.mentor) detail.append(el('div', 'px-qrow', m.mentor));   // SOFTCAP1: mentor mode says so where the lowered numbers are
+  const masterBox = masterCard(m);   // custom/menu
+  if (masterBox) detail.append(masterBox);
   for (const group of m.groups) {
     if (!group.career && !statsAllSkills) continue;
     if (!group.ids.length) continue;
@@ -6419,6 +6457,13 @@ function onKey(e) {
   // AUDIT DISC28 UI-1: read off the EVENT, its modifier flags and all (eventMeans - InputManager.GetKeyUp's
   // GetUnaryKey answers a combo binding while its modifier is held), and read BEFORE the chord refusal, which now
   // refuses only what the pause action does not mean.
+  // custom/menu: Q and E between tabs, 1 to 9 down the rail - only while nothing is over the window and no Growth face holds the keys
+  if (mode === 'pause' && !release && pauseHotkeys(e, app, () => !(accountOpen || (timersOpen && timersView) || (postOpen && postView) || (seasonOpen && seasonView)
+    || (shopOpen && shopView) || confirming || sheetOpen || profActUnderWay() || controlsPromptOpen() || (pauseTab === 'growth' && stageLive())))) {
+    e.preventDefault();
+    e.stopPropagation();
+    return;
+  }
   const pauseKey = mode === 'pause' && eventMeans(e, 'Escape');
   if (!pauseKey && (e.ctrlKey || e.altKey)) return;
   if (overlayAction(e) !== 'back' && !pauseKey) return;
@@ -6506,6 +6551,7 @@ export function mountEnhancedMenu(host, {
   owner = null,
 } = {}) {
   injectEnhancedStyle();
+  injectAssistStyle(document);   // custom/menu
   injectEnhancedFonts();
   app = host;
   onAction = handler;
