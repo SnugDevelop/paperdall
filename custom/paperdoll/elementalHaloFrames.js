@@ -29,28 +29,59 @@ function ring(px, put, colors) {
   }
 }
 
+/**
+ * The fire: teardrop flames that grow out of the ring's own curve - wide at the root, a bright core, a dark red skin, a
+ * pointed tip that leans and licks. Each flame breathes on its own beat; the tall ones stand at the back, the short ones in
+ * front; embers lift off the tips and cool as they rise. 12 frames, and every beat divides 12 so the loop is seamless.
+ */
 export function fireHaloFrame(i) {
   const px = new Uint8Array(ELEMENT_W * ELEMENT_H * 4), put = putter(px);
-  const C = { line:[91,35,12], light:[255,235,130], mid:[255,132,35], dark:[195,49,18] };
-  // Flickering tongues of flame rise from the ring; the staggered phases keep the motion lively.
-  const tongues = [[12,22,0],[22,30,3],[33,19,6],[45,28,1],[56,18,5],[68,27,2],[80,20,7]];
-  for (const [x, h, phase] of tongues) {
-    const sway = Math.round(Math.sin((i + phase) * Math.PI / 6) * 2);
-    const flicker = (i + phase) % 4;
-    for (let k = 0; k < h - flicker; k++) {
-      const xx = x + sway + (k > 5 ? Math.round(Math.sin(k * .8 + i) * 1.5) : 0);
-      const yy = 48 - k;
-      put(xx, yy, k % 5 === 0 ? C.light : k % 3 === 0 ? C.dark : C.mid);
-      if (k < 5) put(xx + 1, yy, C.light);
+  const C = { line:[91,35,12], hot:[255,248,200], light:[255,226,110], mid:[255,132,35], dark:[195,49,18], deep:[140,30,14] };
+  const CX = 48, CY = 53, OX = 38, OY = 8, TAU = Math.PI * 2;
+  /** where the ring's top edge is in column x - a flame's root sits just inside it */
+  const ringTop = (x) => CY - OY * Math.sqrt(Math.max(0, 1 - ((x - CX) / OX) ** 2));
+  // [x, height, half-width at the root, beat offset 0..11, back row?] - the back row is drawn first
+  const FLAMES = [
+    [26, 27, 5, 2, 1], [43, 36, 6, 7, 1], [58, 31, 6, 4, 1], [72, 25, 5, 10, 1],
+    [14, 14, 4, 0, 0], [31, 20, 5, 5, 0], [49, 27, 6, 9, 0], [66, 20, 5, 3, 0], [82, 14, 4, 8, 0],
+  ];
+  const flame = ([x, H, hw, ph]) => {
+    const t = ((i + ph) % 12) / 12;
+    const h = Math.max(6, Math.round(H * (1 + 0.13 * Math.sin(TAU * t) + 0.06 * Math.sin(TAU * 2 * t + 1))));
+    const sway = 2.4 * Math.sin(TAU * t + ph);
+    const lean = ((x - CX) / OX) * 3.2;            // the outer flames lean away from the middle
+    const root = Math.round(ringTop(x)) + 3;
+    for (let k = 0; k <= h; k++) {
+      const v = k / h;
+      const w = hw * Math.pow(Math.max(0, 1 - v * v), 0.8);          // wide root, pointed tip
+      const c = x + lean * v * v + sway * Math.pow(v, 1.5) + 0.9 * Math.sin(TAU * 2 * t + v * 5) * v;
+      const left = Math.round(c - w), right = Math.round(c + w), y = root - k;
+      for (let xx = left; xx <= right; xx++) {
+        const d = w < 0.6 ? 0 : Math.abs(xx - c) / w;                // 0 at the middle of the flame, 1 at its skin
+        const edge = xx === left || xx === right;
+        let col;
+        if (v > 0.9) col = C.dark;
+        else if (edge && v > 0.12) col = v > 0.55 ? C.deep : C.dark;
+        else if (d < 0.35 && v < 0.3) col = C.hot;
+        else if (d < 0.55 && v < 0.55) col = C.light;
+        else if (d < 0.85 && v < 0.8) col = C.mid;
+        else col = C.dark;
+        put(xx, y, col);
+      }
     }
-    put(x + sway, 48 - h + flicker, C.light);
-  }
+  };
+  for (const f of FLAMES) if (f[4]) flame(f);
+  for (const f of FLAMES) if (!f[4]) flame(f);
   ring(px, put, C);
-  // tiny embers drifting upward
-  for (let n = 0; n < 7; n++) {
-    const x = (n * 17 + 9) % 90 + 3;
-    const y = 12 + ((n * 11 - i * 3 + 72) % 31);
-    put(x, y, n % 2 ? C.light : C.mid);
+  // embers lift off the flames, cooling from yellow to red as they climb; each rises on its own loop of 12
+  for (let n = 0; n < 12; n++) {
+    const age = (i + n * 5) % 12;
+    const x0 = 16 + ((n * 37) % 66);
+    const x = x0 + Math.round(Math.sin((age + n) * TAU / 12) * 2);
+    const y = Math.round(ringTop(x0)) - 12 - age * 2.4 - (n % 3) * 3;
+    const col = age < 4 ? C.light : age < 8 ? C.mid : C.dark;
+    put(x, y, col);
+    if (age < 6 && n % 2 === 0) put(x, y + 1, C.mid);
   }
   return px;
 }

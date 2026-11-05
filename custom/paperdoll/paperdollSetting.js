@@ -66,13 +66,14 @@ export function haloOn() {
 
 export function setHalo(on) {
   haloCache = !!on;
-  if (haloCache) { fireHaloCache = false; snowHaloCache = false; pinkHaloCache = false; }
+  if (haloCache) { fireHaloCache = false; snowHaloCache = false; pinkHaloCache = false; witchHaloCache = false; }
   try {
     appStorage()?.setItem(HALO_KEY, haloCache ? '1' : '0');
     if (haloCache) {
       appStorage()?.setItem(FIRE_HALO_KEY, '0');
       appStorage()?.setItem(SNOW_HALO_KEY, '0');
       appStorage()?.setItem(PINK_HALO_KEY, '0');
+      appStorage()?.setItem(WITCH_HALO_KEY, '0');
     }
   } catch { /* no storage */ }
   return haloCache;
@@ -82,9 +83,11 @@ export function setHalo(on) {
 const FIRE_HALO_KEY = 'custom.paperdoll.fireHalo';
 const SNOW_HALO_KEY = 'custom.paperdoll.snowHalo';
 const PINK_HALO_KEY = 'custom.paperdoll.pinkHalo';
+const WITCH_HALO_KEY = 'custom.paperdoll.witchHalo';
 let fireHaloCache = null;
 let snowHaloCache = null;
 let pinkHaloCache = null;
+let witchHaloCache = null;
 
 export function fireHaloOn() {
   if (fireHaloCache === null) {
@@ -106,13 +109,14 @@ export function snowHaloOn() {
 
 export function setFireHalo(on) {
   fireHaloCache = !!on;
-  if (fireHaloCache) { haloCache = false; snowHaloCache = false; pinkHaloCache = false; }
+  if (fireHaloCache) { haloCache = false; snowHaloCache = false; pinkHaloCache = false; witchHaloCache = false; }
   try {
     appStorage()?.setItem(FIRE_HALO_KEY, fireHaloCache ? '1' : '0');
     if (fireHaloCache) {
       appStorage()?.setItem(HALO_KEY, '0');
       appStorage()?.setItem(SNOW_HALO_KEY, '0');
       appStorage()?.setItem(PINK_HALO_KEY, '0');
+      appStorage()?.setItem(WITCH_HALO_KEY, '0');
     }
   } catch { /* no storage */ }
   return fireHaloCache;
@@ -120,13 +124,14 @@ export function setFireHalo(on) {
 
 export function setSnowHalo(on) {
   snowHaloCache = !!on;
-  if (snowHaloCache) { haloCache = false; fireHaloCache = false; pinkHaloCache = false; }
+  if (snowHaloCache) { haloCache = false; fireHaloCache = false; pinkHaloCache = false; witchHaloCache = false; }
   try {
     appStorage()?.setItem(SNOW_HALO_KEY, snowHaloCache ? '1' : '0');
     if (snowHaloCache) {
       appStorage()?.setItem(HALO_KEY, '0');
       appStorage()?.setItem(FIRE_HALO_KEY, '0');
       appStorage()?.setItem(PINK_HALO_KEY, '0');
+      appStorage()?.setItem(WITCH_HALO_KEY, '0');
     }
   } catch { /* no storage */ }
   return snowHaloCache;
@@ -144,24 +149,50 @@ export function pinkHaloOn() {
 
 export function setPinkHalo(on) {
   pinkHaloCache = !!on;
-  if (pinkHaloCache) { haloCache = false; fireHaloCache = false; snowHaloCache = false; }
+  if (pinkHaloCache) { haloCache = false; fireHaloCache = false; snowHaloCache = false; witchHaloCache = false; }
   try {
     appStorage()?.setItem(PINK_HALO_KEY, pinkHaloCache ? '1' : '0');
     if (pinkHaloCache) {
       appStorage()?.setItem(HALO_KEY, '0');
       appStorage()?.setItem(FIRE_HALO_KEY, '0');
       appStorage()?.setItem(SNOW_HALO_KEY, '0');
+      appStorage()?.setItem(WITCH_HALO_KEY, '0');
     }
   } catch { /* no storage */ }
   return pinkHaloCache;
 }
 
-/** Any of the mutually exclusive halo-style head effects is active. */
-export function headEffectOn() { return haloOn() || fireHaloOn() || snowHaloOn() || pinkHaloOn(); }
+// ---- the Witch's Circle (custom/paperdoll/witchCircle.js): a green ring that throws glittering green sparkles up and out ----
+export function witchHaloOn() {
+  if (witchHaloCache === null) {
+    let v = null;
+    try { v = appStorage()?.getItem(WITCH_HALO_KEY); } catch { /* no storage */ }
+    witchHaloCache = v === '1';
+  }
+  return witchHaloCache;
+}
 
-/** Which local head effect is on - 'gold', 'fire', 'snow' or 'pink' - or null for none. */
+export function setWitchHalo(on) {
+  witchHaloCache = !!on;
+  if (witchHaloCache) { haloCache = false; fireHaloCache = false; snowHaloCache = false; pinkHaloCache = false; }
+  try {
+    appStorage()?.setItem(WITCH_HALO_KEY, witchHaloCache ? '1' : '0');
+    if (witchHaloCache) {
+      appStorage()?.setItem(HALO_KEY, '0');
+      appStorage()?.setItem(FIRE_HALO_KEY, '0');
+      appStorage()?.setItem(SNOW_HALO_KEY, '0');
+      appStorage()?.setItem(PINK_HALO_KEY, '0');
+    }
+  } catch { /* no storage */ }
+  return witchHaloCache;
+}
+
+/** Any of the mutually exclusive halo-style head effects is active. */
+export function headEffectOn() { return haloOn() || fireHaloOn() || snowHaloOn() || pinkHaloOn() || witchHaloOn(); }
+
+/** Which local head effect is on - 'gold', 'fire', 'snow', 'pink' or 'witch' - or null for none. */
 export function localHaloId() {
-  return haloOn() ? 'gold' : fireHaloOn() ? 'fire' : snowHaloOn() ? 'snow' : pinkHaloOn() ? 'pink' : null;
+  return haloOn() ? 'gold' : fireHaloOn() ? 'fire' : snowHaloOn() ? 'snow' : pinkHaloOn() ? 'pink' : witchHaloOn() ? 'witch' : null;
 }
 
 /** Turn exactly one local head effect on (or all off with null). The others go off with it. */
@@ -170,6 +201,7 @@ export function setLocalHalo(id) {
   setFireHalo(id === 'fire');
   setSnowHalo(id === 'snow');
   setPinkHalo(id === 'pink');
+  setWitchHalo(id === 'witch');
   return localHaloId();
 }
 

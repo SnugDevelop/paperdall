@@ -7,6 +7,7 @@
 
 import { CAPSULE_HEIGHT } from '../../src/player/motor.js';
 import { pinkHaloOn } from './paperdollSetting.js';
+import { witchCircleDraw } from './witchCircle.js';   // drawn from the same call, so the world's draw code stays as it was
 import { pinkHaloFrame, PINK_W, PINK_H, PINK_FRAMES, PINK_RING_BOTTOM } from './pinkDevilHaloFrames.js';
 
 const TEXTURE_SET = 900005;     // beside the gold (900001), fire (900003) and frost (900004) halos
@@ -51,6 +52,7 @@ function build(renderer) {
 
 /** Draw the halo over the head standing at `feet`, if the player has it on. Never throws. { renderer, feet, camRight, bbUp, height? } */
 export function pinkDevilHaloDraw({ renderer, feet, camRight, bbUp, height = CAPSULE_HEIGHT }) {
+  witchCircleDraw({ renderer, feet, camRight, bbUp, height });   // the Witch's Circle's turn (it draws only while it is on)
   if (broken) return;
   if (!pinkHaloOn()) { if (batches) release(); return; }
   if (!renderer || !feet) return;

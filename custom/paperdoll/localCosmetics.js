@@ -11,6 +11,7 @@ import { localHaloId, setLocalHalo, titleOn, setTitle } from './paperdollSetting
 import { haloFrame, HALO_W, HALO_H, HALO_FRAMES } from './goldHaloFrames.js';
 import { fireHaloFrame, snowHaloFrame, ELEMENT_W, ELEMENT_H, ELEMENT_FRAMES } from './elementalHaloFrames.js';
 import { pinkHaloFrame, PINK_W, PINK_H, PINK_FRAMES } from './pinkDevilHaloFrames.js';
+import { witchCircleFrame, WITCH_W, WITCH_H, WITCH_FRAMES } from './witchCircleFrames.js';
 
 export const COSMETIC_NOTE = 'Custom-client bonus cosmetic: included locally for Paperdall users: no purchase or account unlock required.';
 export const TITLE_NOTE = 'Custom-client bonus title: included locally for Paperdall users: no purchase or account unlock required.';
@@ -30,6 +31,9 @@ export const LOCAL_HALOS = Object.freeze([
   Object.freeze({ id: 'pink', name: 'Pink Devil Halo', color: '#ff6fb5',
     look: 'A glossy pink halo floats above the head, crowned with two little devil horns. Thick pink liquid beads and drips from the ring.',
     frames: { w: PINK_W, h: PINK_H, count: PINK_FRAMES, ms: 95, frame: pinkHaloFrame } }),
+  Object.freeze({ id: 'witch', name: 'Witch\'s Circle', color: '#5be07a',
+    look: 'A ring of green witchfire floats above the head, its runes pulsing in turn, throwing glittering green sparkles up and out.',
+    frames: { w: WITCH_W, h: WITCH_H, count: WITCH_FRAMES, ms: 95, frame: witchCircleFrame } }),
 ]);
 
 /** The local titles. One so far. */
