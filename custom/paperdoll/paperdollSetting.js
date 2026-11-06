@@ -187,6 +187,25 @@ export function setWitchHalo(on) {
   return witchHaloCache;
 }
 
+// ---- scene lighting: whether the world's light and shadow reach the client's own halos and title (see sceneLight.js) ----
+const SCENE_LIGHT_KEY = 'custom.paperdoll.sceneLight';
+let sceneLightCache = null;
+/** True (the default) when the world's light darkens the client's halos and title, as it does anything standing in it. */
+export function sceneLightOn() {
+  if (sceneLightCache === null) {
+    let v = null;
+    try { v = appStorage()?.getItem(SCENE_LIGHT_KEY); } catch { /* no storage */ }
+    sceneLightCache = v !== '0';
+  }
+  return sceneLightCache;
+}
+
+export function setSceneLight(on) {
+  sceneLightCache = !!on;
+  try { appStorage()?.setItem(SCENE_LIGHT_KEY, sceneLightCache ? '1' : '0'); } catch { /* no storage */ }
+  return sceneLightCache;
+}
+
 /** Any of the mutually exclusive halo-style head effects is active. */
 export function headEffectOn() { return haloOn() || fireHaloOn() || snowHaloOn() || pinkHaloOn() || witchHaloOn(); }
 

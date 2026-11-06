@@ -6,6 +6,7 @@
 // draw code needed no new line.
 
 import { CAPSULE_HEIGHT } from '../../src/player/motor.js';
+import { uploadBillboardTexture, applySceneLight } from './sceneLight.js';   // the scene-lighting setting
 import { witchHaloOn } from './paperdollSetting.js';
 import { witchCircleFrame, WITCH_W, WITCH_H, WITCH_FRAMES, WITCH_RING_BOTTOM } from './witchCircleFrames.js';
 
@@ -40,7 +41,7 @@ function build(renderer) {
   for (let i = 0; i < WITCH_FRAMES; i++) {
     const key = `witch_circle_${i}`;
     const px = bottomFirst(witchCircleFrame(i));
-    renderer.uploadTexture(TEXTURE_SET, key, { width: WITCH_W, height: WITCH_H, colors: new Uint32Array(px.buffer) });
+    uploadBillboardTexture(renderer, TEXTURE_SET, key, { width: WITCH_W, height: WITCH_H, colors: new Uint32Array(px.buffer) });
     const batch = renderer.createBillboardBatch(TEXTURE_SET, key, { w: WORLD_W, h: worldH }, [[0, 0, 0]]);
     batch.origin = [0, 0, 0];
     list.push({ key, batch });
@@ -60,6 +61,7 @@ export function witchCircleDraw({ renderer, feet, camRight, bbUp, height = CAPSU
     f.batch.origin[0] = feet[0];
     f.batch.origin[1] = feet[1] + height + LIFT - BELOW_RING;
     f.batch.origin[2] = feet[2];
+    applySceneLight(f.batch);
     renderer.drawBillboards([f.batch], camRight, bbUp);
   } catch (err) {
     broken = true;   // once: do not retry every frame

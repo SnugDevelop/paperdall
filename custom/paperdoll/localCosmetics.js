@@ -7,7 +7,7 @@
 //   * pillNode() / activeLocalHalo(): the same halos as choices in the Head slot's picker (ui/characterSlots.js)
 // Its pills wear the look of the slot pickers: a dashed edge in the thing's own colour, a solid glowing one when worn.
 
-import { localHaloId, setLocalHalo, titleOn, setTitle } from './paperdollSetting.js';
+import { localHaloId, setLocalHalo, titleOn, setTitle, sceneLightOn, setSceneLight } from './paperdollSetting.js';
 import { haloFrame, HALO_W, HALO_H, HALO_FRAMES } from './goldHaloFrames.js';
 import { fireHaloFrame, snowHaloFrame, ELEMENT_W, ELEMENT_H, ELEMENT_FRAMES } from './elementalHaloFrames.js';
 import { pinkHaloFrame, PINK_W, PINK_H, PINK_FRAMES } from './pinkDevilHaloFrames.js';
@@ -65,6 +65,8 @@ const CSS = `
   border: 2px solid var(--iron); background: radial-gradient(circle at 50% 60%, #1b1826 0%, #08070c 80%); }
 .card .pd-preview.empty { visibility: hidden; }
 .card .pd-look { margin: 4px 0 0; min-height: 2.6em; }
+.card .pd-lightrow { margin-top: 10px; }
+.card .pd-lightnote { margin: 4px 0 0; }
 `;
 
 export function injectLocalStyle(doc = document) {
@@ -162,8 +164,31 @@ export function localPanel(doc, kind, { keyedAs = (n) => n, repaint = () => {} }
     runPreview(canvas, () => shown?.frames ?? null);
   }
   box.append(look);
+  box.append(...sceneLightRow(doc, keyedAs, repaint));
   sec.append(box);
   return sec;
+}
+
+/**
+ * THE SCENE-LIGHTING SWITCH, under both tabs (it covers every halo and the title): ON, the world's light and shadow darken them
+ * as they do anything standing there; OFF, they shine at full brightness, like the official title and aura. Seen in the
+ * world, not in these previews. Returns the row and its note.
+ */
+function sceneLightRow(doc, keyedAs, repaint) {
+  const on = sceneLightOn();
+  const row = node(doc, 'div', 'acctwearrow pd-lightrow');
+  const b = keyedAs(node(doc, 'button', `acttitle pd-pill${on ? ' worn' : ''}`), 'pd:sceneLight');
+  b.type = 'button';
+  b.style.setProperty('--pd', '#9fc7ff');
+  b.append(node(doc, 'span', 'acttitleword', `Scene lighting: ${on ? 'On' : 'Off'}`));
+  b.setAttribute?.('aria-pressed', on ? 'true' : 'false');
+  b.title = on ? 'Press to make your halos and title shine at full brightness.' : 'Press to let the world\'s light and shadow darken your halos and title.';
+  b.onclick = () => { setSceneLight(!on); repaint(); };
+  row.append(b);
+  const note = node(doc, 'p', 'meta pd-lightnote', on
+    ? 'On: the world\'s light and shadow darken your halos and title, like anything else standing there. You see this in the world, not in these previews.'
+    : 'Off: your halos and title shine at full brightness in the world, whatever the light, like the official title and aura.');
+  return [row, note];
 }
 
 /** Plays `frames()` (a LOCAL_HALOS `frames`, or null) on `canvas` until the canvas leaves the page. */

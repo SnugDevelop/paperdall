@@ -6,6 +6,7 @@
 // Drawn as a billboard from frames made in code (dressUpTitleFrames.js), the way the golden halo is.
 
 import { CAPSULE_HEIGHT } from '../../src/player/motor.js';
+import { uploadBillboardTexture, applySceneLight } from './sceneLight.js';   // the scene-lighting setting
 import { titleOn, headEffectOn, titleScalePercent } from './paperdollSetting.js';
 import { titleFrame, TITLE_W, TITLE_H, TITLE_FRAMES } from './dressUpTitleFrames.js';
 
@@ -42,7 +43,7 @@ function build(renderer) {
   for (let i = 0; i < TITLE_FRAMES; i++) {
     const key = `dressup_title_${i}`;
     const px = bottomFirst(titleFrame(i));
-    renderer.uploadTexture(TEXTURE_SET, key, { width: TITLE_W, height: TITLE_H, colors: new Uint32Array(px.buffer) });
+    uploadBillboardTexture(renderer, TEXTURE_SET, key, { width: TITLE_W, height: TITLE_H, colors: new Uint32Array(px.buffer) });
     const batch = renderer.createBillboardBatch(TEXTURE_SET, key, { w: worldW, h: worldH }, [[0, 0, 0]]);
     batch.origin = [0, 0, 0];
     list.push({ key, batch });
@@ -67,6 +68,7 @@ export function dressUpTitleDraw({ renderer, feet, camRight, bbUp, height = CAPS
     f.batch.origin[0] = feet[0];
     f.batch.origin[1] = feet[1] + height + LIFT + (headEffectOn() ? HALO_SPACE : 0);
     f.batch.origin[2] = feet[2];
+    applySceneLight(f.batch);
     renderer.drawBillboards([f.batch], camRight, bbUp);
   } catch (err) {
     broken = true;   // once: do not retry every frame

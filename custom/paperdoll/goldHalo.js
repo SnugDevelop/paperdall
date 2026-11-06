@@ -6,6 +6,7 @@
 // It is drawn as a billboard (its frames uploaded once as textures), the way the paperdoll body is.
 
 import { CAPSULE_HEIGHT } from '../../src/player/motor.js';
+import { uploadBillboardTexture, applySceneLight } from './sceneLight.js';   // the scene-lighting setting
 import { haloOn } from './paperdollSetting.js';
 import { haloFrame, HALO_W, HALO_H, HALO_FRAMES } from './goldHaloFrames.js';
 
@@ -40,7 +41,7 @@ function build(renderer) {
   for (let i = 0; i < HALO_FRAMES; i++) {
     const key = `gold_halo_${i}`;
     const px = bottomFirst(haloFrame(i));
-    renderer.uploadTexture(TEXTURE_SET, key, { width: HALO_W, height: HALO_H, colors: new Uint32Array(px.buffer) });
+    uploadBillboardTexture(renderer, TEXTURE_SET, key, { width: HALO_W, height: HALO_H, colors: new Uint32Array(px.buffer) });
     const batch = renderer.createBillboardBatch(TEXTURE_SET, key, { w: WORLD_W, h: worldH }, [[0, 0, 0]]);
     batch.origin = [0, 0, 0];
     list.push({ key, batch });
@@ -64,6 +65,7 @@ export function goldHaloDraw({ renderer, feet, camRight, bbUp, height = CAPSULE_
     f.batch.origin[0] = feet[0];
     f.batch.origin[1] = feet[1] + height + LIFT;
     f.batch.origin[2] = feet[2];
+    applySceneLight(f.batch);
     renderer.drawBillboards([f.batch], camRight, bbUp);
   } catch (err) {
     broken = true;   // once: do not retry every frame

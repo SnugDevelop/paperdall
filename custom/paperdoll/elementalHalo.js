@@ -1,5 +1,6 @@
 // Local animated fire and frost halos. Only one head effect is active at a time.
 import { CAPSULE_HEIGHT } from '../../src/player/motor.js';
+import { uploadBillboardTexture, applySceneLight } from './sceneLight.js';   // the scene-lighting setting
 import { fireHaloOn, snowHaloOn } from './paperdollSetting.js';
 import { ELEMENT_W, ELEMENT_H, ELEMENT_FRAMES, fireHaloFrame, snowHaloFrame } from './elementalHaloFrames.js';
 
@@ -30,7 +31,7 @@ function build(renderer, set, prefix, frameFn) {
   for (let i = 0; i < ELEMENT_FRAMES; i++) {
     const key = `${prefix}_${i}`;
     const px = bottomFirst(frameFn(i));
-    renderer.uploadTexture(set, key, { width: ELEMENT_W, height: ELEMENT_H, colors: new Uint32Array(px.buffer) });
+    uploadBillboardTexture(renderer, set, key, { width: ELEMENT_W, height: ELEMENT_H, colors: new Uint32Array(px.buffer) });
     const batch = renderer.createBillboardBatch(set, key, { w: WORLD_W, h: worldH }, [[0, 0, 0]]);
     batch.origin = [0, 0, 0];
     list.push({ key, batch });
@@ -59,11 +60,13 @@ export function elementalHaloDraw({ renderer, feet, camRight, bbUp, height = CAP
       if (!fire) fire = build(renderer, SET_FIRE, 'fire_halo', fireHaloFrame);
       const f = fire[Math.floor(performance.now() / FRAME_MS) % fire.length];
       f.batch.origin[0] = feet[0]; f.batch.origin[1] = feet[1] + height + LIFT; f.batch.origin[2] = feet[2];
+      applySceneLight(f.batch);
       renderer.drawBillboards([f.batch], camRight, bbUp);
     } else {
       if (!snow) snow = build(renderer, SET_SNOW, 'snow_halo', snowHaloFrame);
       const f = snow[Math.floor(performance.now() / FRAME_MS) % snow.length];
       f.batch.origin[0] = feet[0]; f.batch.origin[1] = feet[1] + height + LIFT; f.batch.origin[2] = feet[2];
+      applySceneLight(f.batch);
       renderer.drawBillboards([f.batch], camRight, bbUp);
     }
   } catch (err) {
