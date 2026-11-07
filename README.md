@@ -165,8 +165,7 @@ To build: `npm run build`. After changing code, rebuild before testing a built c
 
 ## Credits
 
-Based on Daggerfall Enhanced by Lattymoy and Daggerfall Unity. Paperdoll art: Paperdoll Enhanced (check its license
-before redistributing).
+Based on Daggerfall Enhanced by Lattymoy and Daggerfall Unity.
 
 
 # DFO Online: open-source edition
