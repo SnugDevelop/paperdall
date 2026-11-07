@@ -1,109 +1,201 @@
-# DFO Online
+```text
+════════════════════════════════════════════════════════════════════════
+██████╗  █████╗ ██████╗ ███████╗██████╗ ██████╗  █████╗ ██╗     ██╗     
+██╔══██╗██╔══██╗██╔══██╗██╔════╝██╔══██╗██╔══██╗██╔══██╗██║     ██║     
+██████╔╝███████║██████╔╝█████╗  ██████╔╝██║  ██║███████║██║     ██║     
+██╔═══╝ ██╔══██║██╔═══╝ ██╔══╝  ██╔══██╗██║  ██║██╔══██║██║     ██║     
+██║     ██║  ██║██║     ███████╗██║  ██║██████╔╝██║  ██║███████╗███████╗
+╚═╝     ╚═╝  ╚═╝╚═╝     ╚══════╝╚═╝  ╚═╝╚═════╝ ╚═╝  ╚═╝╚══════╝╚══════╝
 
-**DFO Online** - an open-source reimplementation of a classic 1996 RPG,
-played from your own copy of The Elder Scrolls II: Daggerfall. It began as a
-1:1 port of Daggerfall Unity (MIT, Interkarma and contributors) and is now its
-own game: Daggerfall Unity is the reference for its data layer and logic, not a
-target to match. Presentation rebuilt on hand-rolled WebGL2. MIT licensed, with
-Daggerfall Unity's notice alongside (LICENSE). DFO Online is an independent,
-unofficial project, not affiliated with or endorsed by Bethesda Softworks or
-ZeniMax Media. The Elder Scrolls and Daggerfall are trademarks of ZeniMax
-Media Inc.
-
-The project's working name in the docs and the code is `project-dagger`, and
-the repository, the live domain, the servers and the desktop app's identifier
-still carry the old `daggerfall` spellings - renaming those is a move outside
-this tree (BR1, BR5).
-
-Play it: https://daggerfalljs.dev/
-
-The site is `index.html` (what it is, how to play, credits); the game is
-`play/index.html`, served at `/play/`. Both deploy from `main` to GitHub
-Pages. The landing page takes its palette and fonts from the enhanced skin
-at build (`scripts/landingHtml.mjs`) and carries no game data or imagery.
-
-Docs live in `bible/` - start at `bible/Home.md`.
-
-Original game data (ARENA2) is required and never committed. Point tests at it
-with `ARENA2_PATH`. The player's own copy of The Elder Scrolls: Arena is
-optional - its places stand on the map of Tamriel (`bible/03-World/Arena-Provinces.md`;
-its reader translated from OpenTESArena, MIT) - and is never committed either;
-point tests at it with `ARENA_PATH`.
-
-## Support development
-
-DFO Online is free and open source. Active development currently
-costs about **$600 per month** to sustain across development tooling,
-multiplayer infrastructure, testing, builds, releases, and mod compatibility
-work.
-
-Support on Patreon: https://www.patreon.com/c/dfenhanced
-
-Support on Ko-fi: https://ko-fi.com/daggerfallonline
-
-The monthly goal, suggested support levels, and funding breakdown are in
-[`SUPPORT.md`](SUPPORT.md). Sponsorship does not lock gameplay, source code,
-or normal releases behind a paywall.
-
-## Reporting exploits and security issues
-
-Privately, please: type `/bug` in the game, or see [`SECURITY.md`](SECURITY.md)
-for the other ways in and what to include. Please don't post exploits in public until
-they are fixed.
-
-## Scripts
-
-Node 20.19+ or 22.12+ (Vite 8's floor; CI runs 22).
-
-- `npm run dev` - Vite dev server
-- `npm test` - Node test runner
-- `npm run build` - production build
-- `npm run lint` - eslint over `src/` (no-undef, no-dupe-keys, ...)
-- `npm run check` - lint + test + build (pre-push gate)
-- `npm run cites [-- --apply | -- --check]` - write a line number cited into our code as an anchor, `file.js:"the line's text"`, and resolve every anchor (tools/citeAnchor.mjs)
-- `npm run shot [out.png]` - headless render proof (needs ARENA2_PATH + provisioned Chromium)
-- `node tools/landingProbe.mjs` - the landing page and `/play/` in a real browser, no ARENA2 needed
-- `node tools/verify-deploy.mjs` - after a push: proves the live `/play/` serves your commit
-
-## Desktop app
-
-`app/` is the downloadable build: an Electron shell that loads the
-same `dist/` the website deploys and adds what a browser can't -
-**saves as real files** (DFU's own layout: `Saves/SAVE<n>/SaveData.txt`
-+ `SaveInfo.txt` + `Screenshot.jpg`, settings under `Prefs/`) and
-**ARENA2 read straight from your folder on disk** (found for you on
-first run, or picked once - no ingest, no diet, full sky sets). The browser build
-is unchanged; the storage seam is `src/systems/appStorage.js`.
-
-```
-npm run build && cd app && npm install && npm start
+             ██████╗ ███╗   ██╗██╗     ██╗███╗   ██╗███████╗
+            ██╔═══██╗████╗  ██║██║     ██║████╗  ██║██╔════╝
+            ██║   ██║██╔██╗ ██║██║     ██║██╔██╗ ██║█████╗  
+            ██║   ██║██║╚██╗██║██║     ██║██║╚██╗██║██╔══╝  
+            ╚██████╔╝██║ ╚████║███████╗██║██║ ╚████║███████╗
+             ╚═════╝ ╚═╝  ╚═══╝╚══════╝╚═╝╚═╝  ╚═══╝╚══════╝
+════════════════════════════════════════════════════════════════════════
 ```
 
-The app opens on a **launcher** (`app/launcher/`), the game's front
-door: the latest patch notes (what came since you last played marked
-NEW), your game files, saves and update settings, and a big **Play**. It
-checks for an update and brings it before you play - the game's own
-files, only those that changed, on every platform; a release that changes
-the app itself is installed by the Windows `-setup` install and the Linux
-AppImage, and offered as a download on macOS and the portable exe - and on first run finds
-Daggerfall - on Steam, GOG, in Daggerfall Unity's settings, or an
-unpacked DaggerfallGameFiles.zip. An update that lands mid-session is
-told in the game and waits under File > Restart to Update (on macOS and
-the portable exe, File > Download v...).
+**Paperdall Online** is a custom DFO client designed to draw in the player's paperdoll sprite in place of the usual animated sprite, along with adding simple QoL changes for better readability.
 
-`npm run dist` in `app/` packages installers. Every push to main
-builds them for all three OSes and publishes them as ONE GitHub Release
-(`.github/workflows/release-desktop.yml`: staged as a draft, published
-whole once every OS built) at `app-v<major>.<minor>.<commit count>` -
-the version is derived from the commit, never bumped by hand - with the
-`## Patch notes` of every pull request it brings as its notes (written in
-the PR description, in ASD-STE100 Simplified Technical English, never as a
-file in the tree). The files carry no version in
-their names, so `releases/latest/download/DFO-Online-win-x64-setup.exe`
-(and `-mac-arm64.dmg`, `-linux-x86_64.AppImage`) is always the newest,
-and the landing page links each directly. Pushing a tag shaped `app-v*`
-cuts one by hand. Details
-in `bible/01-Overview/Desktop-App.md`; headless proof:
-`xvfb-run -a node tools/appShellProbe.mjs` (point `DAGGER_SHELL_EXE`
-at a packaged binary to prove an installer's payload). The packaged
-app bundles NO game data - same doctrine as the site.
+DISCLAIMER: Vibe coded from ChatGPT and Claude, so this is not my own work and may be buggy.
+
+## Features
+
+- Reuses the existing Daggerfall equipment paperdoll, replacing the traditional animated player sprite with the paperdoll representation.
+- Simple QoL changes for better client readability. 
+- Displays the player's equipped appearance in the outdoor world.
+- Optional animated back sprite when seen from behind.
+- Preserves the existing first-person view and combat behavior. The paperdoll feature is intended as an alternative third-person character presentation, not a replacement for the original first-person experience.
+
+## Custom changes
+
+Built on Daggerfall Enhanced (`daggerfall-js-source`, MIT) and Daggerfall Unity. The paperdoll code lives in
+`custom/paperdoll/`; the upstream files listed under "Files touched" carry only small hooks, so updates from upstream
+merge cleanly.
+
+### Paperdoll
+
+- **Paperdoll body in third person.** The player's own paperdoll, composed transparently from the equipped gear,
+  replaces the Eye of the Beholder sprite when walking on foot. The sprite is kept when riding, transformed, dead,
+  in the grown overworld travel view, and until the doll has finished composing. The doll updates when gear, race,
+  gender or face change.
+- **"Paperdoll" look option.** Profile → Skin → Look now offers Skins, Layered Gearing and Paperdoll. The choice is
+  saved with the game's other settings. Paperdoll is on by default (`DEFAULT_ON` in
+  `custom/paperdoll/paperdollSetting.js`).
+- **Animated back sprite (optional).** With Paperdoll selected, a checkbox under it lets the normal animated sprite
+  draw when the player is seen from behind, so the paperdoll is the front view only. Off by default
+  (`BACK_DEFAULT_ON` in `paperdollSetting.js`). The sprite is used for the straight-behind view and the two back
+  diagonals (`BACK_ORIENTATIONS` in `paperdollExtensions.js`).
+- **Paperdoll character preview.** With Look set to Paperdoll, the profile (and shop and wardrobe) character
+  preview shows the paperdoll in a running game. At the title screen it still shows the sprite.
+- **Mod faces in menu icons.** Face icons (menu portrait, save tiles, character-creation face picker) use an
+  attached DFMod's replacement faces, such as Paperdoll Enhanced, and fall back to the original icons. Works with
+  the mod and with loose textures.
+- **Debugging aid.** `__paperdoll.state()` and `__paperdoll.diag` in the browser console report the paperdoll's
+  status.
+- **Sheathing.** The in-world doll now draws with its weapon, shield and torch removed while your weapon is put away, and brings them back when you draw. One detail: sizing is still measured from the doll as worn, so the figure doesn’t shrink or grow when the weapon appears or disappears. On a fresh login you’re sheathed, so weapons won’t show until you draw. A gathering tool in hand counts as drawn, matching how your game already treats it.
+
+### QoL Changes
+
+- **Master Skills.** It’s now a card at the top of the Skills page, with its one-line description. The Character page keeps a single row of doors: Pack, Spellbook, Chronicle, Growth. Master Skills and Growth keep their count badges.
+- **Grouped rails.** Thin rules split the Stats rail into you, standing and activities. The System rail splits into game, options, help and leave.
+- **Plainer names.** Standing is now Reputation, and Advantages is now Advantages & Disadvantages. Every tab and most pages also have a hover tip, for example Growth: “Level up, choose specializations, and spend stars on the Firmament.”
+- **Waiting markers.** A small lit square sits on the Growth tab when a level, path or stars are waiting. One also appears on Stats and Skills when a skill is ready to master, so moving Master Skills doesn’t hide that.
+- **Keys.** Q and E step through tabs, and 1 to 9 open the rail’s pages, with small Q and E key caps at the ends of the tab strip. The keys stand aside while a card, field or window is open, on the System rail (where rows act), and while the Growth stage is up.
+- **System.** Added a Tutorials row next to About. The Tutorials tab stays where it was.
+- **Readability** The dim small print is a step brighter, and keyboard focus now draws a clear yellow ring.
+
+### HUD Character Card
+
+It sits bottom-left and shows:
+
+- The head and shoulders of your paperdoll
+- your title above your name
+- HP, MP and FT bars, with fatigue as a percentage
+
+### Custom cosmetics and titles
+
+Paperdall adds a few cosmetics and a title of its own. They are bonus, client-side extras: included locally for Paperdall users, no purchase or account unlock required. Only you see them. The account service knows nothing about them, and they never touch the official store cosmetics, titles or auras.
+
+### Where to find them
+
+Open your profile while signed in:
+
+- **Cosmetics** (button at the top left of the profile) opens the Cosmetics tab.
+- **Titles** (button at the top right of the profile) opens the Titles tab.
+- The halos are also offered in the **Head** slot's picker in the Character section, after the official head pieces.
+
+Point at a choice to preview it and read its description, press it to wear it, and press it again (or choose **None**) to take it off. Your choices are remembered in this browser.
+
+### Cosmetics (head)
+
+Only one halo can be worn at a time.
+
+| Halo | Look |
+| --- | --- |
+| Golden Halo | A ring of gold pixels with a bright glint running round it and sparkles that swell and fade. |
+| Flaming Halo | A ring of fire with tongues of flame rising from it and drifting embers. |
+| Frost Halo | A ring of ice with snowflakes falling through it and icy glints around the rim. |
+| Pink Devil Halo | A glossy pink halo crowned with two little devil horns. Thick pink liquid beads along the ring, swells into drips, lets go and falls. |
+
+### Titles
+
+| Title | Look |
+| --- | --- |
+| My Dress Up Darling | A shimmering gold title with twinkling stars, shown above your name over your head and on your profile. |
+
+### Where the code lives
+
+All of it is in `custom/paperdoll/`, with small hooks in `src/`.
+
+- `localCosmetics.js`: the list of local halos and titles, and the Cosmetics and Titles tabs.
+- `paperdollSetting.js`: the saved settings. Turning one halo on turns the others off.
+- `pinkDevilHaloFrames.js`, `pinkDevilHalo.js`: the Pink Devil Halo's pixel art (drawn in code, no image assets) and its in-world drawing.
+- `goldHalo.js`, `elementalHalo.js`, `dressUpTitle.js` (and their `*Frames.js`): the other halos and the title.
+- Hooks: `src/ui/enhanced/enhancedAccount.js` (the two buttons and the tab), `src/ui/characterSlots.js` (halos in the Head picker), `src/player/eyeOfTheBeholder/eotbBody.js` (draws the halos in the world).
+
+### Adding another cosmetic
+
+Add an entry to `LOCAL_HALOS` (or `LOCAL_TITLES`) in `localCosmetics.js` with a name, colour, description and preview frames, add a setting in `paperdollSetting.js`, and draw it in the world the way `pinkDevilHalo.js` does.
+
+
+### Branding and menus
+
+- **Renamed to Paperdall Online.** A new gold wordmark replaces the dragon logo in the menu, intro and landing page
+  (`src/assets/branding/dfo-online.png`, same size as the original so layouts are unchanged). A matching title
+  splash is at `public/logo.png`, and the landing page's title text is updated.
+- **Support links removed; About button added.** The Patreon and Ko-fi icons are gone from the in-game main menu
+  and from the landing page. A small "i" button takes their place and opens the AI disclaimer about this build.
+
+### Files touched
+
+New: `custom/paperdoll/paperdollExtensions.js`, `paperdollSetting.js`, `paperdollImage.js`; `public/logo.png`.
+
+Replaced art: `src/assets/branding/dfo-online.png`.
+
+Small edits to upstream files:
+
+| File | Change |
+|---|---|
+| `src/ui/paperDoll.js` | `composeDollTransparent`, the doll without its backdrop |
+| `src/player/eyeOfTheBeholder/eotbBody.js` | the draw hook (one import, one call) |
+| `src/ui/skinCard.js` | the Paperdoll look and the back-sprite checkbox |
+| `src/ui/profileBody.js`, `src/render/characterStage.js` | the paperdoll preview |
+| `src/ui/facePortrait.js` | mod faces in menu icons |
+| `src/ui/enhanced/enhancedMenu.js` | the About button replaces the support links; unused import removed |
+| `index.html` | landing page: title text, support links replaced by the About button |
+
+### Not changed
+
+The desktop launcher window (`app/launcher`) still shows the original name and logo. The account server's optional
+Claude staff feature (`server-account/src/claudeStaff.js`) is left in; it does nothing unless a server enables it.
+
+## Running from source
+
+Daggerfall's game files are not included. You need your own copy of the `arena2` folder.
+
+```
+npm install
+set ARENA2_PATH=C:\path\to\your\arena2
+npm run dev
+```
+
+To build: `npm run build`. After changing code, rebuild before testing a built copy.
+
+## Credits
+
+Based on Daggerfall Enhanced by Lattymoy and Daggerfall Unity.
+
+
+# DFO Online: open-source edition
+
+This is the source of DFO Online as it stood on 2026-11-02. It is released under the MIT License (`LICENSE`), with
+Daggerfall Unity's notice beside it. Work on DFO Online continues in a private repository.
+
+DFO Online is an independent, unofficial project. It is not affiliated with or endorsed by Bethesda Softworks or
+ZeniMax Media. The Elder Scrolls and Daggerfall are trademarks of ZeniMax Media Inc.
+
+Play the live game at https://daggerfalljs.dev/.
+
+## The desktop app
+
+The desktop app's releases are published here, and installed copies update from them:
+https://github.com/Lattymoy/daggerfall-js-source/releases
+
+## Reporting a bug
+
+Open an issue here. Report an exploit or a security problem privately, as `SECURITY.md` says.
+
+## Building this edition
+
+Node 20.19+ or 22.12+.
+
+- `npm ci`
+- `npm run dev`: the development server
+- `npm run build`: a production build
+
+The game reads your own copy of The Elder Scrolls II: Daggerfall (its `ARENA2` folder), which is never committed.
+`sh tools/fetch-data.sh <folder>` downloads the free release of it into that folder.
+
+This edition does not follow the live game, so its client may not connect to the live servers.
