@@ -16,7 +16,7 @@
 ════════════════════════════════════════════════════════════════════════
 ```
 
-**Paperdall Online** is a custom DFO client designed to draw in the player's paperdoll sprite in place of the usual animated sprite.
+**Paperdall Online** is a custom DFO client designed to draw in the player's paperdoll sprite in place of the usual animated sprite, along with adding simple QoL changes to the DFO client.
 
 DISCLAIMER: Vibe coded from ChatGPT and Claude, so this is not my own work and may be buggy.
 
@@ -56,7 +56,7 @@ merge cleanly.
   status.
 - **Sheathing.** The in-world doll now draws with its weapon, shield and torch removed while your weapon is put away, and brings them back when you draw. One detail: sizing is still measured from the doll as worn, so the figure doesn’t shrink or grow when the weapon appears or disappears. On a fresh login you’re sheathed, so weapons won’t show until you draw. A gathering tool in hand counts as drawn, matching how your game already treats it.
 
-  ## HUD Character Card
+  ### HUD Character Card
 
   It sits bottom-left and shows:
 
@@ -64,7 +64,7 @@ merge cleanly.
 - your title above your name
 - HP, MP and FT bars, with fatigue as a percentage
 
-  ## Custom cosmetics and titles
+  ### Custom cosmetics and titles
 
 Paperdall adds a few cosmetics and a title of its own. They are bonus, client-side extras: included locally for Paperdall users, no purchase or account unlock required. Only you see them. The account service knows nothing about them, and they never touch the official store cosmetics, titles or auras.
 
