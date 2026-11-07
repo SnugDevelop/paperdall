@@ -56,9 +56,19 @@ merge cleanly.
   status.
 - **Sheathing.** The in-world doll now draws with its weapon, shield and torch removed while your weapon is put away, and brings them back when you draw. One detail: sizing is still measured from the doll as worn, so the figure doesn’t shrink or grow when the weapon appears or disappears. On a fresh login you’re sheathed, so weapons won’t show until you draw. A gathering tool in hand counts as drawn, matching how your game already treats it.
 
+### QoL Changes
+
+- **Master Skills.** It’s now a card at the top of the Skills page, with its one-line description. The Character page keeps a single row of doors: Pack, Spellbook, Chronicle, Growth. Master Skills and Growth keep their count badges.
+- **Grouped rails.** Thin rules split the Stats rail into you, standing and activities. The System rail splits into game, options, help and leave.
+- **Plainer names.** Standing is now Reputation, and Advantages is now Advantages & Disadvantages. Every tab and most pages also have a hover tip, for example Growth: “Level up, choose specializations, and spend stars on the Firmament.”
+- **Waiting markers.** A small lit square sits on the Growth tab when a level, path or stars are waiting. One also appears on Stats and Skills when a skill is ready to master, so moving Master Skills doesn’t hide that.
+- **Keys.** Q and E step through tabs, and 1 to 9 open the rail’s pages, with small Q and E key caps at the ends of the tab strip. The keys stand aside while a card, field or window is open, on the System rail (where rows act), and while the Growth stage is up.
+- **System.** Added a Tutorials row next to About. The Tutorials tab stays where it was.
+- **Readability** The dim small print is a step brighter, and keyboard focus now draws a clear yellow ring.
+
 ### HUD Character Card
 
-  It sits bottom-left and shows:
+It sits bottom-left and shows:
 
 - The head and shoulders of your paperdoll
 - your title above your name
