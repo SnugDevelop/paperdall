@@ -208,7 +208,7 @@ export function proxyMesh(/** @type {ArrayLike<number>} */ pts, /** @type {Recor
 
 /**
  * THE STAGE on `canvas`: `body` drawn with `aura` at its feet and `kit` on it until stopped - a Morrowind body (fpArm
- * stage()), a sprite (its rows bottom first) or the stand-in (null). Answers { setBody, setKit, setAura, setEffect, headAt,
+ * stage()), a sprite (its rows bottom first) or the stand-in (null). Answers { setBody, setKit, setAura, setEffect, headAt, metrePx,
  * stop, alive, step }, null with no WebGL2; `headAt()` the plate's anchor in CSS px (ui/nameLayer.js's), or null.
  * @param {HTMLCanvasElement} canvas
  * @param {{ body?: any, kit?: string|null, aura?: string|null, now?: () => number, clear?: number[], ground?: number[], pitch?: number,
@@ -541,6 +541,18 @@ export function startCharacterStage(
       const cw = canvas.clientWidth || canvas.width,
         ch = canvas.clientHeight || canvas.height;
       return { x: ((c[0] / c[3]) * 0.5 + 0.5) * cw, y: (0.5 - (c[1] / c[3]) * 0.5) * ch };
+    },
+    /** CSS pixels to the metre at the head - what one metre standing up through the head point spans on screen - or null. A halo or
+     *  any other picture hung over the head is sized by it. */
+    metrePx() {
+      const y = Math.max(headY(), armoryHeadTip(kitWearer) ?? 0);
+      const ch = canvas.clientHeight || canvas.height;
+      const at = (yy) => {
+        const c = [0, 1, 2, 3].map((r) => vp[4 + r] * yy + vp[12 + r]);
+        return c[3] > 0 ? (0.5 - (c[1] / c[3]) * 0.5) * ch : null;
+      };
+      const a = at(y), b = at(y + 1);
+      return a === null || b === null ? null : Math.abs(a - b);
     },
     stop,
     /** Whether it still draws - false once stopped, its canvas taken off the page or let go. */

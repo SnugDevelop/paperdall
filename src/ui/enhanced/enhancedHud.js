@@ -128,6 +128,7 @@ import { SERPENT_RING_MAP_CSS } from '../serpentMapMark.js';   // SERPENT1: the 
 import { SD_RING_MAP_CSS } from '../superDungeon/sdMapMark.js';   // SD2c: the Super dungeon on the strip, in its ring's brass
 import { noteFirstUse } from '../../systems/tutorials.js';   // TUT1: the first touch of a system pops its tutorial page
 import { STAR_VIOLET_CSS } from '../starfall/starMapMark.js';   // STAR6: a fallen star's violet, its compass mark's
+import { tickPlayerCard } from '../../../custom/hud/playerCard.js';   // custom/hud: the HUD's character card
 
 /**
  * PX30c (Mac: "is there anyway I can adjust the sizing?"): THE HUD'S
@@ -1255,6 +1256,7 @@ export function drawEnhancedHud(vitals, heading01, dt = 0, opts = {}) {
     ['health', parts.health, hp.health ?? 0, hp.maxHealth || 1],
     ['fatigue', parts.fatigue, vitals.fatigue ?? 0, maxFatigue(vitals) || vitals.maxFatigue || 1],
   ];
+  tickPlayerCard(host, rows);   // custom/hud: the character card, from the same three rows
   for (const [key, part, now, max] of rows) {
     const pct = (now / max) * 100;
     width(part.fill, `${key}W`, pct);

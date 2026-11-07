@@ -21,19 +21,19 @@ const HINT = 'Point at a choice to see it. Press it to wear it.';
 export const LOCAL_HALOS = Object.freeze([
   Object.freeze({ id: 'gold', name: 'Golden Halo', color: '#f7c840',
     look: 'A ring of gold pixels floats above the head, a bright glint running round it and sparkles that swell and fade.',
-    frames: { w: HALO_W, h: HALO_H, count: HALO_FRAMES, ms: 110, frame: haloFrame } }),
+    frames: { w: HALO_W, h: HALO_H, count: HALO_FRAMES, ms: 110, frame: haloFrame }, place: { w: 0.62, below: 0 } }),
   Object.freeze({ id: 'fire', name: 'Flaming Halo', color: '#ff8a2a',
     look: 'A ring of fire floats above the head, tongues of flame rising from it and embers drifting up.',
-    frames: { w: ELEMENT_W, h: ELEMENT_H, count: ELEMENT_FRAMES, ms: 95, frame: fireHaloFrame } }),
+    frames: { w: ELEMENT_W, h: ELEMENT_H, count: ELEMENT_FRAMES, ms: 95, frame: fireHaloFrame }, place: { w: 0.70, below: 0 } }),
   Object.freeze({ id: 'snow', name: 'Frost Halo', color: '#5db7ef',
     look: 'A ring of ice floats above the head, snowflakes falling through it and icy glints circling its rim.',
-    frames: { w: ELEMENT_W, h: ELEMENT_H, count: ELEMENT_FRAMES, ms: 95, frame: snowHaloFrame } }),
+    frames: { w: ELEMENT_W, h: ELEMENT_H, count: ELEMENT_FRAMES, ms: 95, frame: snowHaloFrame }, place: { w: 0.70, below: 0 } }),
   Object.freeze({ id: 'pink', name: 'Pink Devil Halo', color: '#ff6fb5',
     look: 'A glossy pink halo floats above the head, crowned with two little devil horns. Thick pink liquid beads and drips from the ring.',
-    frames: { w: PINK_W, h: PINK_H, count: PINK_FRAMES, ms: 95, frame: pinkHaloFrame } }),
+    frames: { w: PINK_W, h: PINK_H, count: PINK_FRAMES, ms: 95, frame: pinkHaloFrame }, place: { w: 0.66, below: ((PINK_H - 1 - 48) * 0.66) / PINK_W } }),
   Object.freeze({ id: 'witch', name: 'Witch\'s Circle', color: '#5be07a',
     look: 'A ring of green witchfire floats above the head, its runes pulsing in turn, throwing glittering green sparkles up and out.',
-    frames: { w: WITCH_W, h: WITCH_H, count: WITCH_FRAMES, ms: 95, frame: witchCircleFrame } }),
+    frames: { w: WITCH_W, h: WITCH_H, count: WITCH_FRAMES, ms: 95, frame: witchCircleFrame }, place: { w: 0.84, below: ((WITCH_H - 1 - 59) * 0.84) / WITCH_W } }),
 ]);
 
 /** The local titles. One so far. */
@@ -66,6 +66,8 @@ const CSS = `
 .card .pd-preview.empty { visibility: hidden; }
 .card .pd-look { margin: 4px 0 0; min-height: 2.6em; }
 .card .pd-lightrow { margin-top: 10px; }
+.card .pd-stagehalo { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.card .pd-stagehalo canvas { position: absolute; left: 0; top: 0; transform-origin: 0 0; image-rendering: pixelated; }
 .card .pd-lightnote { margin: 4px 0 0; }
 `;
 
@@ -213,4 +215,47 @@ function runPreview(canvas, frames) {
     raf(tick);
   };
   raf(tick);
+}
+
+// ---- THE HALO ON THE PROFILE'S PREVIEW STAGE ----
+/** The halo's height as the world stands its name plate over it (ownPlate.js HALO_SPACE), metres: the preview's plate rises as far. */
+export const HALO_PLATE_RISE = 0.36;
+const HALO_LIFT = 0.04;    // the gap between the crown and the ring's lowest edge, as in the world
+
+/**
+ * The worn halo drawn over the preview stage's head - above the body, whichever body (sprite, doll or Morrowind) the stage
+ * shows - at the size and height the world draws it. `host` goes over the stage's canvas; `place(at, metrePx)` runs each frame
+ * with the stage's head point (CSS px) and its pixels to the metre, and hides the halo when none is worn or the stage has
+ * no head point yet. Frames are made once each.
+ */
+export function stageHalo(doc) {
+  injectLocalStyle(doc);
+  const host = node(doc, 'div', 'pd-stagehalo');
+  host.setAttribute?.('aria-hidden', 'true');
+  const canvas = node(doc, 'canvas');
+  host.append(canvas);
+  const ctx = canvas.getContext?.('2d') ?? null;
+  const made = new Map();
+  let wxh = '';
+  return {
+    host,
+    place(at, metrePx) {
+      const h = activeLocalHalo();
+      if (!h?.place || !at || !(metrePx > 0) || !ctx || typeof globalThis.ImageData !== 'function') { canvas.style.display = 'none'; return; }
+      const f = h.frames;
+      if (wxh !== `${f.w}x${f.h}`) { wxh = `${f.w}x${f.h}`; canvas.width = f.w; canvas.height = f.h; }
+      const i = Math.floor(performance.now() / f.ms) % f.count;
+      const key = `${h.id}:${i}`;
+      let img = made.get(key);
+      if (!img) { img = new globalThis.ImageData(new Uint8ClampedArray(f.frame(i)), f.w, f.h); made.set(key, img); }
+      ctx.clearRect(0, 0, f.w, f.h);
+      ctx.putImageData(img, 0, 0);
+      const wpx = h.place.w * metrePx, hpx = (wpx * f.h) / f.w;
+      const bottom = at.y + (h.place.below - HALO_LIFT) * metrePx;      // the picture's lower edge, as the world hangs it
+      canvas.style.display = '';
+      canvas.style.width = `${wpx}px`;
+      canvas.style.height = `${hpx}px`;
+      canvas.style.transform = `translate(${Math.round(at.x - wpx / 2)}px, ${Math.round(bottom - hpx)}px)`;
+    },
+  };
 }

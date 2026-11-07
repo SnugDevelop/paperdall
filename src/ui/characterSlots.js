@@ -23,7 +23,7 @@ import { armoryPieceName, armorySlotName, armoryLineName, ARMORY_LOOK } from './
 import { namePlateNode } from './namePlate.js';
 import { dressUpTitleNode } from '../../custom/paperdoll/customTitle.js'; // custom/paperdoll: the client's own gold title
 import { titleOn, setLocalHalo } from '../../custom/paperdoll/paperdollSetting.js';
-import { LOCAL_HALOS, activeLocalHalo, localLook, pillNode } from '../../custom/paperdoll/localCosmetics.js'; // custom/paperdoll: the client's own halos, offered in the Head slot
+import { LOCAL_HALOS, activeLocalHalo, localLook, pillNode, stageHalo, HALO_PLATE_RISE } from '../../custom/paperdoll/localCosmetics.js'; // custom/paperdoll: the client's own halos, offered in the Head slot
 import { EFFECT_SLOTS, EFFECTS, effectWorn } from '../net/effectLaw.js'; // STOREFRONT: the effects' slots
 import { effectName, effectLook, effectSlotName } from './effectText.js';
 import { effectEmblemNode } from './effectEmblems.js'; // AUDIT-STOREFRONT: each choice's emblem beside its name
@@ -136,6 +136,7 @@ export function characterSlots(
   let canvas = null,
     stage = null,
     plateHost = null,
+    haloLayer = null,   // custom/paperdoll: the worn halo drawn over the stage's head
     plateKey = '',
     raf = 0,
     alive = true;
@@ -155,6 +156,7 @@ export function characterSlots(
       canvas = null;
       stage = null;
       plateHost = null;
+      haloLayer = null;
       plateKey = '';
       if (raf) globalThis.cancelAnimationFrame?.(raf);
       raf = 0;
@@ -166,6 +168,7 @@ export function characterSlots(
     canvas.height = SLOTS_STAGE_PX.height;
     plateHost = el('div', 'slots-platehost');
     plateHost.setAttribute?.('aria-hidden', 'true');
+    haloLayer = stageHalo(doc);
     if (typeof canvas.getContext !== 'function' || !start) return; // no canvas, or no stage handed in: the slots alone
     const ask = () => {
       const s = slotsShown(flow.wardrobe, trial);
@@ -186,6 +189,7 @@ export function characterSlots(
           freshLook();
         }
         placePlate();
+        haloLayer?.place(stage.headAt(), stage.metrePx?.());   // custom/paperdoll
         raf = globalThis.requestAnimationFrame?.(follow) ?? 0;
       };
       follow();
@@ -244,9 +248,11 @@ export function characterSlots(
     }
     const at = stage.headAt();
     const node = plateHost.firstChild;
+    // custom/paperdoll: a worn halo hangs over the head, so the plate stands over it, as the world's own plate does
+    const rise = activeLocalHalo() ? Math.round(HALO_PLATE_RISE * (stage.metrePx?.() ?? 0)) : 0;
     if (node?.style)
       node.style.transform = at
-        ? `translate(${Math.round(at.x)}px, ${Math.round(at.y - gap)}px) translate(-50%, -100%)`
+        ? `translate(${Math.round(at.x)}px, ${Math.round(at.y - gap - rise)}px) translate(-50%, -100%)`
         : 'translate(-9999px, 0)';
   }
   /** STOREFRONT: the effect the stage plays - the one tried on, else the open slot's worn one (a portal's none: the violet
@@ -635,7 +641,7 @@ export function characterSlots(
         el(
           'span',
           'acttitleword',
-          k === 'mw' ? t('account.slots.mw', 'Morrowind') : t('account.slots.sprite', 'Sprite'),
+          k === 'mw' ? t('account.slots.mw', 'Morrowind') : k === 'doll' ? t('account.slots.doll', 'Doll') : t('account.slots.sprite', 'Sprite'),   // custom/paperdoll: the paperdoll is the Doll
         ),
       );
       b.type = 'button';
@@ -665,7 +671,7 @@ export function characterSlots(
       };
       const mid = el('div', 'slots-mid'),
         fig = el('div', 'slots-figure');
-      fig.append(canvas, plateHost);
+      fig.append(canvas, haloLayer.host, plateHost);   // custom/paperdoll: the halo over the body, under the plate
       mid.append(fig);
       const sw = bodySwitch(); // under the stage, never over the ring at its feet
       if (sw) mid.append(sw);

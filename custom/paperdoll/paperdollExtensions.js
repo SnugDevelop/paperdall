@@ -10,6 +10,7 @@
 import { composeDollTransparent, paperDollPixels, paperDollArtLoaded } from '../../src/ui/paperDoll.js';
 import { playerEntity } from '../../src/characters/playerEntity.js';
 import { drawnEquipTable } from '../../src/systems/capeShown.js';
+import { equipOf, EQUIP_SLOTS } from '../../src/systems/equip.js';
 import { CAPSULE_HEIGHT } from '../../src/player/motor.js';
 import { isEnabled, setEnabled, backSpriteOn } from './paperdollSetting.js';
 import { alphaBounds, cropBottomUp } from './paperdollImage.js';
@@ -26,6 +27,7 @@ let batch = null;
 let textureKey = null;
 let renderer_ = null;
 let dirty = true;
+let handsAway = false;      // the weapon is sheathed: the doll is drawn with its hands empty
 let busy = false;
 let sequence = 0;
 let retryAt = 0;
@@ -57,7 +59,7 @@ export { isEnabled, setEnabled };
 // ---- helpers --------------------------------------------------------------
 
 /** A cheap signature of what the player wears: every primitive field of each drawn item. */
-function wornSignature(entity) {
+export function wornSignature(entity) {
   let table = [];
   try { table = drawnEquipTable(entity) ?? []; } catch { /* none */ }
   const parts = [entity.race, entity.gender, entity.faceIndex];
@@ -71,6 +73,23 @@ function wornSignature(entity) {
     parts.push(row.join(':'));
   }
   return parts.join('|');
+}
+
+/**
+ * THE DOLL WITH EMPTY HANDS: a stand-in for `entity` whose equipment table has the right and left hand emptied - the weapon,
+ * the shield, the torch - and every other thing read through to the real entity. The doll composer reads the table and
+ * nothing else of the hands, so composing this entity draws the same doll without them. The real table is not touched.
+ */
+export function dollEntity(entity) {
+  const real = equipOf(entity);
+  const slots = [...real.slots];
+  slots[EQUIP_SLOTS.RightHand] = null;
+  slots[EQUIP_SLOTS.LeftHand] = null;
+  const table = Object.create(real);   // its methods read `this.slots`, which is the emptied copy
+  table.slots = slots;
+  const view = Object.create(entity);
+  view.equip = table;
+  return view;
 }
 
 function poll(entity) {
@@ -111,17 +130,22 @@ function swapBatch(renderer, pixels, w, h, height) {
 
 function refresh(renderer, entity, height) {
   if (!dirty || busy || performance.now() < retryAt) return;
+  const slim = handsAway;   // the picture asked for now: hands empty (the weapon is sheathed) or as worn
   dirty = false;
   busy = true;
   const fail = () => { dirty = true; retryAt = performance.now() + RETRY_DELAY_MS; };
   diag.composes++;
-  composeDollTransparent(entity)
-    .then((px) => {
+  // The crop and the size come from the doll AS WORN, always: a weapon or a shield changes the picture's bounds, and the body
+  // would grow and shrink as the weapon went in and out. The sheathed doll is cut to the same rectangle, so only the hands go.
+  Promise.all([composeDollTransparent(entity), slim ? composeDollTransparent(dollEntity(entity)) : null])
+    .then(([full, bare]) => {
+      const px = full;
       if (!px?.rgba) { diag.nulls++; note(paperDollArtLoaded() ? 'compose returned null (art is loaded)' : 'doll art not loaded yet'); return fail(); }
       const r = alphaBounds(px.rgba, px.width, px.height);
       if (!r) { diag.noBounds++; note('doll composed but fully transparent'); return fail(); }
-      swapBatch(renderer, cropBottomUp(px.rgba, px.width, r), r.w, r.h, height);
-      note('doll ready (' + r.w + 'x' + r.h + ')');
+      const shown = bare?.rgba && bare.width === px.width && bare.height === px.height ? bare : px;
+      swapBatch(renderer, cropBottomUp(shown.rgba, shown.width, r), r.w, r.h, height);
+      note('doll ready (' + r.w + 'x' + r.h + ')' + (shown === bare ? ', hands away' : ''));
     })
     .catch((err) => { diag.errors++; note('error: ' + (err?.message ?? err), err); fail(); })
     .finally(() => { busy = false; });
@@ -132,9 +156,10 @@ function refresh(renderer, entity, height) {
 /**
  * Draw the player's paperdoll in place of the sprite. Returns true when it drew (the caller then skips the
  * sprite), false when the sprite should draw: the toggle is off, or the doll is not composed yet.
- *   { renderer, feet, camRight, bbUp, conceal, height?, orientation? }   `orientation`: the sprite's wheel position now (eotbBody's shown.orientation)
+ *   { renderer, feet, camRight, bbUp, conceal, height?, orientation?, sheathed? }   `orientation`: the sprite's wheel position now (eotbBody's shown.orientation);
+ *   `sheathed`: the weapon is put away - the doll's weapon, shield and torch go with it
  */
-export function paperdollDraw({ renderer, feet, camRight, bbUp, conceal = null, height = null, orientation = null }) {
+export function paperdollDraw({ renderer, feet, camRight, bbUp, conceal = null, height = null, orientation = null, sheathed = false }) {
   diag.calls++;
   if (diag.calls === 1) note('hook reached');
   if (!isEnabled()) { if (batch) release(); note('disabled by toggle'); return false; }
@@ -143,6 +168,7 @@ export function paperdollDraw({ renderer, feet, camRight, bbUp, conceal = null, 
   if (!renderer || !feet || !playerEntity) { note('missing input: ' + [!renderer && 'renderer', !feet && 'feet', !playerEntity && 'playerEntity'].filter(Boolean).join(',')); return false; }
   if (renderer_ !== renderer) { release(); renderer_ = renderer; }
 
+  if (!!sheathed !== handsAway) { handsAway = !!sheathed; dirty = true; retryAt = 0; }   // the weapon went in or came out: draw the doll again
   poll(playerEntity);
   refresh(renderer, playerEntity, height);
 

@@ -129,6 +129,25 @@ export function ownPlateDraw({ canvas, proj, view, feet, height = CAPSULE_HEIGHT
   }
 }
 
+/**
+ * WHO THE PLAYER IS, as the plate would say it, whatever the plate's own two switches: { title, name, glyphs } - the chosen
+ * title's key (or null), the name by the character-name setting, and the glyphs shown beside an account name. The HUD's
+ * character card (custom/hud/playerCard.js) reads it, so it says what the plate over the head says. Never throws.
+ */
+export function ownIdentity() {
+  try {
+    const s = sessionNow();
+    const useCharacterName = characterNameOn();
+    const characterName = typeof playerEntity?.name === 'string' ? playerEntity.name : '';
+    const accountName = typeof s?.name === 'string' ? s.name : '';
+    return {
+      title: chosenTitleKey(s),
+      name: useCharacterName ? characterName : (accountName || characterName),
+      glyphs: useCharacterName ? [] : ownGlyphs(),
+    };
+  } catch { return { title: null, name: '', glyphs: [] }; }
+}
+
 /** For the console: what this device's session carries (key names only - never the values, which hold the token). */
 globalThis.__paperdollPlate = () => ({
   sessionKeys: Object.keys(sessionNow() ?? {}),

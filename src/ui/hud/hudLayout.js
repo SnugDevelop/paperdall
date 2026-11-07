@@ -43,6 +43,8 @@ export const HUD_PIECES = Object.freeze(
     // `dummy`: hidden until there is something to show (no foe targeted) - while unlocked it stands as a preview to move
     { id: 'foe', sel: '.hud .hud-foe', name: 'Target bar', dummy: true, len: true },
     { id: 'hotbar', sel: '.hud .hb', name: 'Hotbar' },
+    // custom/hud: your name and title, your paperdoll's head, and your three vitals (custom/hud/playerCard.js)
+    { id: 'pcard', sel: '.hud .hud-pcard', name: 'Character card' },
     { id: 'breath', sel: '.hud .hud-breath', name: 'Breath bar', len: true, dummy: true },
     // the three bars move as ONE piece, or (hudBarsSplit) each on its own - `edit` says in which mode a piece takes a
     // drag; its offset always stands, so bars moved apart keep their places when they are joined again
