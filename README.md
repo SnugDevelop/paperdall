@@ -22,9 +22,10 @@ DISCLAIMER: Vibe coded from ChatGPT and Claude, so this is not my own work and m
 
 ## Features
 
-- Reuses the existing Daggerfall equipment paperdoll.
+- Reuses the existing Daggerfall equipment paperdoll, replacing the traditional animated player sprite with the paperdoll representation.
+- Simple QoL changes for better client readability. 
 - Displays the player's equipped appearance in the outdoor world.
-- Replaces the traditional animated player sprite with the paperdoll representation, with an optional animated back sprite when seen from behind.
+- Optional animated back sprite when seen from behind.
 - Preserves the existing first-person view and combat behavior. The paperdoll feature is intended as an alternative third-person character presentation, not a replacement for the original first-person experience.
 
 ## Custom changes
@@ -53,6 +54,15 @@ merge cleanly.
   the mod and with loose textures.
 - **Debugging aid.** `__paperdoll.state()` and `__paperdoll.diag` in the browser console report the paperdoll's
   status.
+- **Sheathing.** The in-world doll now draws with its weapon, shield and torch removed while your weapon is put away, and brings them back when you draw. One detail: sizing is still measured from the doll as worn, so the figure doesn’t shrink or grow when the weapon appears or disappears. On a fresh login you’re sheathed, so weapons won’t show until you draw. A gathering tool in hand counts as drawn, matching how your game already treats it.
+
+  ## HUD Character Card
+
+  It sits bottom-left and shows:
+
+- The head and shoulders of your paperdoll
+- your title above your name
+- HP, MP and FT bars, with fatigue as a percentage
 
   ## Custom cosmetics and titles
 
