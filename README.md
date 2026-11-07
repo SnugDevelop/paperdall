@@ -18,7 +18,7 @@
 
 **Paperdall Online** is a custom DFO client designed to draw in the player's paperdoll sprite in place of the usual animated sprite, along with adding simple QoL changes for better readability.
 
-DISCLAIMER: Vibe coded from ChatGPT and Claude, so this is not my own work and may be buggy.
+DISCLAIMER: Vibe coded from ChatGPT and Claude, so this is not my own work and may be buggy. 
 
 ## Features
 
@@ -198,4 +198,4 @@ Node 20.19+ or 22.12+.
 The game reads your own copy of The Elder Scrolls II: Daggerfall (its `ARENA2` folder), which is never committed.
 `sh tools/fetch-data.sh <folder>` downloads the free release of it into that folder.
 
-This edition does not follow the live game, so its client may not connect to the live servers.
+This edition does not follow the live game, so its client may occasionally disconnect from live servers but is still able to be used online.
